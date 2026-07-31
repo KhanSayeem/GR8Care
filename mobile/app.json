@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "GR8Care",
+    "slug": "gr8care",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F7F3EE"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gr8care.app"
+    },
+    "android": {
+      "package": "com.gr8care.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F3EE"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
