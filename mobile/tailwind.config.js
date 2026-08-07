@@ -19,12 +19,12 @@ module.exports = {
         border: '#E8E0D6',
       },
       fontFamily: {
-        display: ['Sora-ExtraBold'],
-        heading: ['Sora-Bold'],
-        subheading: ['Sora-SemiBold'],
-        body: ['DMSans-Regular'],
-        'body-medium': ['DMSans-Medium'],
-        caption: ['DMSans-Bold'],
+        display: ['sans-serif-medium'],
+        heading: ['sans-serif-medium'],
+        subheading: ['sans-serif-medium'],
+        body: ['sans-serif'],
+        'body-medium': ['sans-serif-medium'],
+        caption: ['sans-serif-medium'],
       },
       fontSize: {
         'display-lg': ['36px', { lineHeight: '44px' }],

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Role = 'participant' | 'caregiver' | 'provider' | 'admin';
+export type Role = 'participant' | 'caregiver' | 'supportWorker' | 'provider' | 'admin';
 
 export interface AuthUser {
   _id: string;

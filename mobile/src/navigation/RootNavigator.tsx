@@ -12,6 +12,7 @@ function RoleShell() {
   const role = useAuthStore((state) => state.user?.role);
 
   switch (role) {
+    case 'supportWorker':
     case 'provider':
       return <ProviderTabs />;
     case 'admin':
