@@ -6,13 +6,38 @@ const isWindows = process.platform === 'win32';
 const centerScript = path.join(__dirname, 'center-android-emulator.ps1');
 
 if (isWindows) {
+  spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      centerScript,
+      '-WaitSeconds',
+      '3',
+      '-StabilizeSeconds',
+      '1',
+    ],
+    { stdio: 'ignore' },
+  );
+
   spawn(
     'powershell.exe',
-    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', centerScript, '-WaitSeconds', '90'],
+    [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      centerScript,
+      '-WaitSeconds',
+      '90',
+      '-StabilizeSeconds',
+      '15',
+    ],
     {
       detached: true,
       stdio: 'ignore',
-      windowsHide: true,
     },
   ).unref();
 }

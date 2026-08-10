@@ -1,6 +1,7 @@
 param(
   [int]$WaitSeconds = 60,
-  [string]$AvdName = "GR8Care_API_34"
+  [string]$AvdName = "GR8Care_API_34",
+  [int]$StabilizeSeconds = 12
 )
 
 $ErrorActionPreference = "SilentlyContinue"
@@ -58,6 +59,9 @@ public static class Win32WindowTools {
   public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
 
   [DllImport("user32.dll")]
+  public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+  [DllImport("user32.dll")]
   public static extern bool MoveWindow(IntPtr hWnd, int x, int y, int width, int height, bool repaint);
 
   public struct RECT {
@@ -83,15 +87,32 @@ function Get-EmulatorWindows {
     $titleBuilder = New-Object System.Text.StringBuilder 512
     [void][Win32WindowTools]::GetWindowText($hWnd, $titleBuilder, $titleBuilder.Capacity)
     $title = $titleBuilder.ToString()
+    $windowProcessId = 0
+    [void][Win32WindowTools]::GetWindowThreadProcessId($hWnd, [ref]$windowProcessId)
+    $windowProcess = Get-Process -Id $windowProcessId -ErrorAction SilentlyContinue
 
-    if ($title -like "*Android Emulator*" -or $title -like "*$AvdName*") {
+    $isEmulatorTitle = $title -like "Android Emulator*" -or $title -like "*$AvdName*"
+    $isEmulatorProcess = $windowProcess -and ($windowProcess.ProcessName -like "qemu*" -or $windowProcess.ProcessName -like "emulator*")
+
+    if ($isEmulatorTitle -or $isEmulatorProcess) {
       $rect = New-Object Win32WindowTools+RECT
       [void][Win32WindowTools]::GetWindowRect($hWnd, [ref]$rect)
+      $width = $rect.Right - $rect.Left
+      $height = $rect.Bottom - $rect.Top
+
+      if ($width -lt 240 -or $height -lt 400) {
+        return $true
+      }
+
       $windows.Add([pscustomobject]@{
         Handle = $hWnd
+        ProcessId = $windowProcessId
+        ProcessName = if ($windowProcess) { $windowProcess.ProcessName } else { "" }
         Title = $title
-        Width = $rect.Right - $rect.Left
-        Height = $rect.Bottom - $rect.Top
+        Left = $rect.Left
+        Top = $rect.Top
+        Width = $width
+        Height = $height
       })
     }
 
@@ -103,8 +124,11 @@ function Get-EmulatorWindows {
 }
 
 $deadline = (Get-Date).AddSeconds($WaitSeconds)
+$stabilizeDeadline = $null
 do {
   $windows = Get-EmulatorWindows
+  $movedWindow = $false
+
   foreach ($window in $windows) {
     $width = $window.Width
     $height = $window.Height
@@ -123,9 +147,16 @@ do {
     $newY = [Math]::Max($workArea.Top, [int]($workArea.Top + (($workArea.Height - $newHeight) / 2)))
 
     [void][Win32WindowTools]::MoveWindow($window.Handle, $newX, $newY, $newWidth, $newHeight, $true)
+    $movedWindow = $true
+  }
+
+  if ($movedWindow -and -not $stabilizeDeadline) {
+    $stabilizeDeadline = (Get-Date).AddSeconds($StabilizeSeconds)
+  }
+
+  if ($stabilizeDeadline -and (Get-Date) -ge $stabilizeDeadline) {
     exit 0
   }
 
   Start-Sleep -Milliseconds 750
 } while ((Get-Date) -lt $deadline)
-
