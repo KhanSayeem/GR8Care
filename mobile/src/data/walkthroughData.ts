@@ -33,6 +33,53 @@ export const shiftTasks = [
   { label: 'Progress note', status: 'Draft', tone: 'warning' as const },
 ];
 
+export const workforceResources = [
+  {
+    title: 'Ask S-TRAH AI',
+    body: 'Plain-language education answers for support questions.',
+    tag: 'Education',
+  },
+  {
+    title: 'Shift Note AI',
+    body: 'Capture, review, and copy a worker-owned draft.',
+    tag: 'Drafting',
+  },
+  {
+    title: 'Template examples',
+    body: 'Example structures for notes, messages, and education guides.',
+    tag: 'Examples',
+  },
+  {
+    title: 'Workforce prompts',
+    body: 'Boundary, escalation, and communication reminders.',
+    tag: 'Practice',
+  },
+];
+
+export const templateExamples = [
+  {
+    title: 'Shift note structure example',
+    category: 'Worker documentation',
+    summary: 'Shows headings for what happened, participant response, and follow-up action.',
+  },
+  {
+    title: 'Family communication example',
+    category: 'Communication',
+    summary: 'Plain-language message format for non-urgent support updates.',
+  },
+  {
+    title: 'NDIS education guide example',
+    category: 'Education',
+    summary: 'Simple outline for explaining goals, supports, and plan review preparation.',
+  },
+];
+
+export const compatibilityQuestions = [
+  'Preferred language and communication style',
+  'Support goal and daily routine fit',
+  'Location, availability, and transport needs',
+];
+
 export const wellnessItems = [
   {
     title: 'Two-minute reset',

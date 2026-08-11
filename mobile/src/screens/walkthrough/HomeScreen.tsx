@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge, Card, ProgressBar } from '../../components';
-import { careSummary, fundingCategories, shiftTasks } from '../../data/walkthroughData';
+import { careSummary, fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -10,7 +10,7 @@ interface HomeScreenProps {
   roleLabel: string;
 }
 
-const quickActions: Array<{
+const participantQuickActions: Array<{
   title: string;
   subtitle: string;
   icon: IoniconName;
@@ -23,12 +23,25 @@ const quickActions: Array<{
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
 ];
 
+const workerQuickActions: Array<{
+  title: string;
+  subtitle: string;
+  icon: IoniconName;
+  color: string;
+  bg: string;
+}> = [
+  { title: 'Ask S-TRAH AI', subtitle: 'Education only', icon: 'school', color: '#0B4F6C', bg: '#D0EAF2' },
+  { title: 'Shift Note AI', subtitle: 'Review draft', icon: 'mic', color: '#E8734A', bg: '#FFF1EA' },
+  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
+  { title: 'Workforce tools', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
+];
+
 function formatCurrency(value: number) {
   const amount = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
   return value < 0 ? `-$${amount}` : `$${amount}`;
 }
 
-function QuickActionCard({ title, subtitle, icon, color, bg }: (typeof quickActions)[number]) {
+function QuickActionCard({ title, subtitle, icon, color, bg }: (typeof participantQuickActions)[number]) {
   return (
     <Card style={styles.quickCard}>
       <View style={[styles.quickIconWrap, { backgroundColor: bg }]}>
@@ -41,6 +54,10 @@ function QuickActionCard({ title, subtitle, icon, color, bg }: (typeof quickActi
 }
 
 export function HomeScreen({ roleLabel }: HomeScreenProps) {
+  const isWorkerDashboard = roleLabel === 'Support Worker';
+  const heroTitle = isWorkerDashboard ? 'Workforce resources' : careSummary.participantName;
+  const quickActions = isWorkerDashboard ? workerQuickActions : participantQuickActions;
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F7F3EE" />
@@ -50,7 +67,7 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
           <View style={styles.heroMain}>
             <View style={styles.heroCopy}>
               <Text style={styles.greeting}>Good morning</Text>
-              <Text style={styles.participantName}>{careSummary.participantName}</Text>
+              <Text style={styles.participantName}>{heroTitle}</Text>
             </View>
             <View style={styles.bellButton}>
               <Ionicons name="notifications" color="#FFFFFF" size={20} />
@@ -68,7 +85,9 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
           </View>
           <View style={styles.educationStrip}>
             <Ionicons name="book" color="#0B4F6C" size={14} />
-            <Text style={styles.educationStripText}>S-TRAH explains NDIS questions in plain language</Text>
+            <Text style={styles.educationStripText}>
+              {isWorkerDashboard ? 'Resources, templates, and workforce tools for the MVP walkthrough' : 'S-TRAH explains NDIS questions in plain language'}
+            </Text>
           </View>
         </View>
 
@@ -79,57 +98,97 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
             ))}
           </View>
 
-          <Card style={styles.fundingCard}>
-            <Text style={styles.sectionLabel}>NDIS Funding Overview</Text>
-            <View style={styles.fundingStack}>
-              {fundingCategories.map((category) => {
-                const remaining = category.allocation - category.used;
-                const progress = category.used / category.allocation;
-                const valueColor = remaining < 0 ? '#E53E3E' : '#A0AEC0';
-
-                return (
-                  <View key={category.label}>
-                    <View style={styles.progressHeader}>
-                      <Text style={styles.progressLabel}>{category.label}</Text>
-                      <Text style={[styles.progressValue, { color: valueColor }]}>
-                        {remaining < 0 ? `Over ${formatCurrency(Math.abs(remaining))}` : `${formatCurrency(remaining)} left`}
-                      </Text>
+          {isWorkerDashboard ? (
+            <>
+              <Card style={styles.fundingCard}>
+                <Text style={styles.sectionLabel}>Workforce Resource Hub</Text>
+                <View style={styles.taskStack}>
+                  {workforceResources.map((resource) => (
+                    <View key={resource.title} style={styles.taskRow}>
+                      <View style={styles.bookingCopy}>
+                        <Text style={styles.taskText}>{resource.title}</Text>
+                        <Text style={styles.bookingService}>{resource.body}</Text>
+                      </View>
+                      <Badge label={resource.tag} tone="info" />
                     </View>
-                    <ProgressBar progress={progress} tone={category.tone} />
-                  </View>
-                );
-              })}
-            </View>
-          </Card>
-
-          <View style={styles.outlineButton}>
-            <Text style={styles.outlineButtonText}>View Full Funding Tracker</Text>
-            <Ionicons name="arrow-forward" color="#0B4F6C" size={16} />
-          </View>
-
-          <Text style={styles.upcomingLabel}>Upcoming Bookings</Text>
-          <Card style={styles.bookingCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>MR</Text>
-            </View>
-            <View style={styles.bookingCopy}>
-              <Text style={styles.bookingName}>Maria Rodriguez</Text>
-              <Text style={styles.bookingService}>Occupational Therapy</Text>
-              <Text style={styles.bookingTime}>{careSummary.nextVisit}</Text>
-            </View>
-            <Badge label="Confirmed" tone="success" />
-          </Card>
-
-          <View style={styles.taskStack}>
-            {shiftTasks.map((task) => (
-              <Card key={task.label}>
-                <View style={styles.taskRow}>
-                  <Text style={styles.taskText}>{task.label}</Text>
-                  <Badge label={task.status} tone={task.tone} />
+                  ))}
                 </View>
               </Card>
-            ))}
-          </View>
+
+              <Card style={styles.fundingCard}>
+                <Text style={styles.sectionLabel}>Template Library</Text>
+                <View style={styles.taskStack}>
+                  {templateExamples.map((template) => (
+                    <View key={template.title}>
+                      <Text style={styles.taskText}>{template.title}</Text>
+                      <Text style={styles.bookingService}>{template.summary}</Text>
+                    </View>
+                  ))}
+                </View>
+              </Card>
+
+              <Card variant="warning">
+                <Text style={styles.taskText}>Educational examples only</Text>
+                <Text style={styles.bookingService}>
+                  Templates are not audit documents, compliance documents, official records, or certification tools.
+                </Text>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card style={styles.fundingCard}>
+                <Text style={styles.sectionLabel}>NDIS Funding Overview</Text>
+                <View style={styles.fundingStack}>
+                  {fundingCategories.map((category) => {
+                    const remaining = category.allocation - category.used;
+                    const progress = category.used / category.allocation;
+                    const valueColor = remaining < 0 ? '#E53E3E' : '#A0AEC0';
+
+                    return (
+                      <View key={category.label}>
+                        <View style={styles.progressHeader}>
+                          <Text style={styles.progressLabel}>{category.label}</Text>
+                          <Text style={[styles.progressValue, { color: valueColor }]}>
+                            {remaining < 0 ? `Over ${formatCurrency(Math.abs(remaining))}` : `${formatCurrency(remaining)} left`}
+                          </Text>
+                        </View>
+                        <ProgressBar progress={progress} tone={category.tone} />
+                      </View>
+                    );
+                  })}
+                </View>
+              </Card>
+
+              <View style={styles.outlineButton}>
+                <Text style={styles.outlineButtonText}>View Full Funding Tracker</Text>
+                <Ionicons name="arrow-forward" color="#0B4F6C" size={16} />
+              </View>
+
+              <Text style={styles.upcomingLabel}>Upcoming Bookings</Text>
+              <Card style={styles.bookingCard}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>MR</Text>
+                </View>
+                <View style={styles.bookingCopy}>
+                  <Text style={styles.bookingName}>Maria Rodriguez</Text>
+                  <Text style={styles.bookingService}>Occupational Therapy</Text>
+                  <Text style={styles.bookingTime}>{careSummary.nextVisit}</Text>
+                </View>
+                <Badge label="Confirmed" tone="success" />
+              </Card>
+
+              <View style={styles.taskStack}>
+                {shiftTasks.map((task) => (
+                  <Card key={task.label}>
+                    <View style={styles.taskRow}>
+                      <Text style={styles.taskText}>{task.label}</Text>
+                      <Badge label={task.status} tone={task.tone} />
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            </>
+          )}
         </View>
         </View>
       </ScrollView>
