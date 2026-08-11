@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { Badge, Button, Card } from '../../components';
 import { calmingAudioItem, wellnessItems } from '../../data/walkthroughData';
 import { ScreenShell } from './ScreenShell';
@@ -10,13 +10,26 @@ export function WellnessScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [reviewedTranscript, setReviewedTranscript] = useState(
+    'Participant attended the appointment, practised travel planning, and requested a reminder card for the next visit.',
+  );
 
+  const hasReviewedTranscript = reviewedTranscript.trim().length > 0;
+  const structuredNoteLines = useMemo(
+    () => [
+      'Shift summary: appointment attended and travel planning practised.',
+      'Participant response: requested a reminder card for the next visit.',
+      'Next action: prepare the reminder card before the next support session.',
+      `Worker reviewed transcript: ${reviewedTranscript.trim() || 'No worker-provided summary entered.'}`,
+    ],
+    [reviewedTranscript],
+  );
   const handleCaptureToggle = () => {
     setSubmitted(false);
     setCopied(false);
     if (isCapturing) {
       setIsCapturing(false);
-      setReviewReady(true);
+      setReviewReady(hasReviewedTranscript);
       return;
     }
 
@@ -25,7 +38,7 @@ export function WellnessScreen() {
   };
 
   const handleSubmit = () => {
-    if (!reviewReady) {
+    if (!reviewReady || !hasReviewedTranscript) {
       return;
     }
 
@@ -61,9 +74,20 @@ export function WellnessScreen() {
             <Text className="font-body-medium text-caption text-text-dark">Worker-provided transcript</Text>
             <Text className="font-caption text-label uppercase text-text-mid">{isCapturing ? 'Listening' : 'Editable review'}</Text>
           </View>
-          <Text className="mt-2 font-body text-body text-text-mid">
-            Participant attended the appointment, practised travel planning, and requested a reminder card for the next visit.
-          </Text>
+          <TextInput
+            accessibilityLabel="Review worker-provided shift transcript"
+            className="mt-3 min-h-28 rounded-md border border-teal-light bg-white px-3 py-3 font-body text-body text-text-dark"
+            multiline
+            onChangeText={(value) => {
+              setReviewedTranscript(value);
+              setSubmitted(false);
+              setCopied(false);
+              setReviewReady(value.trim().length > 0 && !isCapturing);
+            }}
+            placeholder="Review the worker-spoken summary before generating a draft"
+            placeholderTextColor="#A0AEC0"
+            value={reviewedTranscript}
+          />
         </View>
 
         <View className="mt-3 rounded-md border border-teal-light bg-white p-3">
@@ -82,16 +106,18 @@ export function WellnessScreen() {
             />
           </View>
           <View className="flex-1">
-            <Button label="Submit draft" variant="outline" disabled={!reviewReady} onPress={handleSubmit} />
+            <Button label="Submit draft" variant="outline" disabled={!reviewReady || !hasReviewedTranscript} onPress={handleSubmit} />
           </View>
         </View>
 
-        <View className="mt-4 gap-2">
-          <Text className="font-body-medium text-caption text-text-dark">Structured note preview</Text>
-          <Text className="font-body text-body text-text-mid">What happened: appointment attended and travel planning practised.</Text>
-          <Text className="font-body text-body text-text-mid">Participant response: asked for a reminder card for the next visit.</Text>
-          <Text className="font-body text-body text-text-mid">Follow-up action: prepare reminder card before the next support session.</Text>
-        </View>
+        {reviewReady ? (
+          <View className="mt-4 rounded-md border border-border bg-white p-3">
+            <Text className="font-body-medium text-caption text-text-dark">Ready for worker review submission</Text>
+            <Text className="mt-1 font-body text-caption text-text-mid">
+              The drafting flow will use only the reviewed worker-provided transcript above.
+            </Text>
+          </View>
+        ) : null}
 
         {submitted ? (
           <View className="mt-4 rounded-md border border-teal-mid bg-teal-light p-3">
@@ -106,9 +132,11 @@ export function WellnessScreen() {
             </View>
 
             <View className="mt-3 gap-2 rounded-md bg-white p-3">
-              <Text className="font-body text-body text-text-mid">Shift summary: appointment attended and travel planning practised.</Text>
-              <Text className="font-body text-body text-text-mid">Participant response: requested a reminder card for the next visit.</Text>
-              <Text className="font-body text-body text-text-mid">Next action: prepare the reminder card before the next support session.</Text>
+              {structuredNoteLines.map((line) => (
+                <Text key={line} className="font-body text-body text-text-mid">
+                  {line}
+                </Text>
+              ))}
             </View>
 
             <View className="mt-3">

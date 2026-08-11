@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
 import { tabIcon } from './tabIcons';
 
 export type ProviderTabParamList = {
@@ -39,9 +40,7 @@ export function ProviderTabs() {
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
         {() => <HomeScreen roleLabel={roleLabel} providerSection="templates" />}
       </Tab.Screen>
-      <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }}>
-        {() => <HomeScreen roleLabel={roleLabel} providerSection="workforce" />}
-      </Tab.Screen>
+      <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
       <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={ProfileScreen} />
     </Tab.Navigator>
   );
