@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { SUBSCRIPTION_TIERS, getTierAccess } = require('../services/subscriptionAccess');
 
-const ROLES = ['participant', 'caregiver', 'provider', 'admin'];
+const ROLES = ['participant', 'caregiver', 'supportWorker', 'provider', 'admin'];
 
 const consentSchema = new mongoose.Schema(
   {

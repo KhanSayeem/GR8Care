@@ -29,14 +29,25 @@ const ROLE_OPTIONS: Array<{
   },
   {
     role: 'supportWorker',
-    label: 'Provider / Caregiver',
-    description: 'Healthcare worker or disability support provider',
+    label: 'Support Worker',
+    description: 'Worker delivering participant supports and recording service notes',
     email: 'worker@gr8care.app',
     icon: 'medical',
     iconBg: 'rgba(45,158,107,0.15)',
     bg: '#D4F0E4',
     border: '#2D9E6B',
     accent: '#2D9E6B',
+  },
+  {
+    role: 'provider',
+    label: 'Provider',
+    description: 'Organisation coordinating workers, services, and participant support',
+    email: 'provider@gr8care.app',
+    icon: 'business',
+    iconBg: 'rgba(232,126,73,0.15)',
+    bg: '#FCE6DA',
+    border: '#E87E49',
+    accent: '#A9491C',
   },
   {
     role: 'admin',
@@ -76,6 +87,7 @@ export function LoginScreen() {
                   fullName: option.label,
                   email: option.email,
                   role: option.role,
+                  language: 'en',
                 })
               }
               style={[styles.roleCard, { backgroundColor: option.bg, borderColor: option.border }]}
@@ -134,17 +146,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   roleList: {
-    marginTop: 28,
-    gap: 20,
+    marginTop: 24,
+    gap: 14,
   },
   roleCard: {
-    minHeight: 100,
+    minHeight: 92,
     borderRadius: 20,
     borderWidth: 2,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 18,
+    paddingVertical: 14,
     shadowColor: '#0A4F6B',
     shadowOpacity: 0.08,
     shadowRadius: 16,
