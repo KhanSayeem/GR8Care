@@ -1,5 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useAuthStore } from '../store/authStore';
+import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 import { tabIcon } from './tabIcons';
@@ -15,6 +17,9 @@ export type ProviderTabParamList = {
 const Tab = createBottomTabNavigator<ProviderTabParamList>();
 
 export function ProviderTabs() {
+  const role = useAuthStore((state) => state.user?.role);
+  const roleLabel = role === 'supportWorker' ? 'Support Worker' : 'Provider';
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -26,16 +31,16 @@ export function ProviderTabs() {
       }}
     >
       <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}>
-        {() => <HomeScreen roleLabel="Provider" providerSection="dashboard" />}
+        {({ navigation }) => (
+          <HomeScreen roleLabel={roleLabel} providerSection="dashboard" onOpenEducation={() => navigation.navigate('Resources')} />
+        )}
       </Tab.Screen>
-      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }}>
-        {() => <HomeScreen roleLabel="Provider" providerSection="resources" />}
-      </Tab.Screen>
+      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
-        {() => <HomeScreen roleLabel="Provider" providerSection="templates" />}
+        {() => <HomeScreen roleLabel={roleLabel} providerSection="templates" />}
       </Tab.Screen>
       <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }}>
-        {() => <HomeScreen roleLabel="Provider" providerSection="workforce" />}
+        {() => <HomeScreen roleLabel={roleLabel} providerSection="workforce" />}
       </Tab.Screen>
       <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={ProfileScreen} />
     </Tab.Navigator>
