@@ -180,6 +180,48 @@ export const knowledgeAgentAnswer = {
     'Bring examples of support outcomes, invoices, reports, and notes about changed needs. Use official NDIA channels for decisions or plan changes.',
 };
 
+export const educationChatbotLanguages = [
+  {
+    code: 'en',
+    label: 'English',
+    promptLabel: 'Spoken question in English',
+    question: 'What should I bring to a plan review?',
+    answer:
+      'Bring examples of support outcomes, invoices, reports, and notes about changed needs. Use official NDIA channels for decisions or plan changes.',
+    readAloudLabel: 'Hear answer in English',
+    stopReadAloudLabel: 'Stop English read-aloud',
+    readAloudStatus: 'Playing the answer in English.',
+    textAlign: 'left' as const,
+    writingDirection: 'ltr' as const,
+  },
+  {
+    code: 'ar',
+    label: 'Arabic',
+    promptLabel: 'سؤال منطوق بالعربية',
+    question: 'ماذا يجب أن أحضر إلى مراجعة الخطة؟',
+    answer:
+      'أحضر أمثلة على نتائج الدعم والفواتير والتقارير وملاحظات عن الاحتياجات التي تغيرت. استخدم قنوات NDIA الرسمية للقرارات أو تغييرات الخطة.',
+    readAloudLabel: 'استمع إلى الإجابة بالعربية',
+    stopReadAloudLabel: 'إيقاف القراءة بالعربية',
+    readAloudStatus: 'يتم تشغيل الإجابة بالعربية.',
+    textAlign: 'right' as const,
+    writingDirection: 'rtl' as const,
+  },
+  {
+    code: 'vi',
+    label: 'Vietnamese',
+    promptLabel: 'Câu hỏi nói bằng tiếng Việt',
+    question: 'Tôi nên mang theo gì khi đánh giá lại kế hoạch?',
+    answer:
+      'Hãy mang theo ví dụ về kết quả hỗ trợ, hóa đơn, báo cáo và ghi chú về các nhu cầu đã thay đổi. Hãy dùng các kênh NDIA chính thức cho quyết định hoặc thay đổi kế hoạch.',
+    readAloudLabel: 'Nghe câu trả lời bằng tiếng Việt',
+    stopReadAloudLabel: 'Dừng đọc tiếng Việt',
+    readAloudStatus: 'Đang phát câu trả lời bằng tiếng Việt.',
+    textAlign: 'left' as const,
+    writingDirection: 'ltr' as const,
+  },
+];
+
 export const providerMatches = [
   {
     name: 'CareBridge Community Support',
