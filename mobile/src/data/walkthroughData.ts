@@ -93,9 +93,18 @@ export const templateExamples = [
 ];
 
 export const compatibilityQuestions = [
-  'Preferred language and communication style',
-  'Support goal and daily routine fit',
-  'Location, availability, and transport needs',
+  {
+    preference: 'Preferred language and communication style',
+    workerSignal: 'Bengali speaking and uses plain-language updates',
+  },
+  {
+    preference: 'Support goal and daily routine fit',
+    workerSignal: 'Community access and routine support experience',
+  },
+  {
+    preference: 'Location, availability, and transport needs',
+    workerSignal: 'Lakemba area and evening shift preference',
+  },
 ];
 
 export const wellnessItems = [
@@ -222,24 +231,21 @@ export const educationChatbotLanguages = [
   },
 ];
 
-export const providerMatches = [
+export const compatibilityExamples = [
   {
-    name: 'CareBridge Community Support',
-    match: 94,
-    location: 'Lakemba',
-    strengths: ['Bengali speaking', 'Community access', 'Evening shifts'],
+    name: 'Sample worker profile A',
+    compatibilityIndicator: 'Higher alignment',
+    profileSignals: ['Bengali speaking', 'Community access', 'Evening shifts'],
   },
   {
-    name: 'Northside Allied Care',
-    match: 88,
-    location: 'Parramatta',
-    strengths: ['Transport', 'Goal tracking', 'Female staff available'],
+    name: 'Sample worker profile B',
+    compatibilityIndicator: 'Some alignment',
+    profileSignals: ['Transport support', 'Goal tracking', 'Female worker preference'],
   },
   {
-    name: 'Everyday Skills Hub',
-    match: 81,
-    location: 'Bankstown',
-    strengths: ['Life skills', 'Weekend availability', 'Reports'],
+    name: 'Sample worker profile C',
+    compatibilityIndicator: 'Limited alignment',
+    profileSignals: ['Life skills', 'Weekend shifts', 'Progress notes'],
   },
 ];
 
