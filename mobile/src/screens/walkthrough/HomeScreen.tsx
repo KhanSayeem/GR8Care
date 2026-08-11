@@ -42,6 +42,14 @@ const providerQuickActions: Array<{
   { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
 
+const supportWorkerQuickActions: Array<(typeof providerQuickActions)[number]> = [
+  { title: 'Shift Note AI', subtitle: 'Capture and review', icon: 'mic', color: '#0B4F6C', bg: '#D0EAF2' },
+  { title: 'Wellness', subtitle: 'Simple reset', icon: 'heart', color: '#E8734A', bg: '#FFF1EA' },
+  { title: 'NDIS Education Library', subtitle: 'Plain-language guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
+  { title: 'Knowledge Agent', subtitle: 'Cited answers', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', educationShortcut: true },
+  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D1B69', bg: '#EDE9FF' },
+];
+
 const providerSectionCopy: Record<ProviderSection, { title: string; description: string }> = {
   dashboard: {
     title: 'Education hub',
@@ -89,13 +97,21 @@ function QuickActionCard({
 
 export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation }: HomeScreenProps) {
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
+  const isSupportWorkerDashboard = roleLabel === 'Support Worker' && providerSection === 'dashboard';
   const heroTitle = isProviderShell
-    ? `${roleLabel} ${providerSectionCopy[providerSection].title.toLowerCase()}`
+    ? isSupportWorkerDashboard
+      ? 'Support Worker home'
+      : `${roleLabel} ${providerSectionCopy[providerSection].title.toLowerCase()}`
     : careSummary.participantName;
-  const quickActions = isProviderShell ? providerQuickActions : participantQuickActions;
+  const quickActions = isSupportWorkerDashboard ? supportWorkerQuickActions : isProviderShell ? providerQuickActions : participantQuickActions;
   const visibleResources = providerSection === 'workforce'
     ? workforceResources.filter((resource) => resource.tag === 'Drafting' || resource.tag === 'Practice')
     : workforceResources;
+  const educationStripText = isProviderShell
+    ? isSupportWorkerDashboard
+      ? 'Ask S-TRAH AI, shift notes, wellness, education, and templates for daily practice.'
+      : providerSectionCopy[providerSection].description
+    : 'Browse NDIS education in plain-language categories';
 
   return (
     <>
@@ -119,18 +135,33 @@ export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEdu
             </View>
             <View style={styles.zonePill}>
               <Ionicons name={isProviderShell ? 'school' : 'location'} color="#0B4F6C" size={12} />
-              <Text style={styles.zonePillText}>{isProviderShell ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
+              <Text style={styles.zonePillText}>{isSupportWorkerDashboard ? 'MVP tools' : isProviderShell ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
             </View>
           </View>
           <View style={styles.educationStrip}>
             <Ionicons name="book" color="#0B4F6C" size={14} />
-            <Text style={styles.educationStripText}>
-              {isProviderShell ? providerSectionCopy[providerSection].description : 'Browse NDIS education in plain-language categories'}
-            </Text>
+            <Text style={styles.educationStripText}>{educationStripText}</Text>
           </View>
         </View>
 
         <View style={styles.content}>
+          {isSupportWorkerDashboard ? (
+            <Pressable accessibilityRole="button" onPress={onOpenEducation} style={styles.primaryActionPressable}>
+              <Card style={styles.primaryActionCard}>
+                <View style={[styles.quickIconWrap, { backgroundColor: '#FFF1EA' }]}>
+                  <Ionicons name="school" color="#E8734A" size={25} />
+                </View>
+                <View style={styles.primaryActionCopy}>
+                  <Text style={styles.primaryActionTitle}>Ask S-TRAH AI</Text>
+                  <Text style={styles.primaryActionSub}>
+                    Large plain-language entry point for education questions, with Knowledge Agent and library links nearby.
+                  </Text>
+                </View>
+                <Ionicons name="arrow-forward" color="#0B4F6C" size={18} />
+              </Card>
+            </Pressable>
+          ) : null}
+
           <View style={styles.quickGrid}>
             {quickActions.map((action) => (
               <QuickActionCard key={action.title} {...action} onPress={action.educationShortcut ? onOpenEducation : undefined} />
@@ -367,6 +398,30 @@ const styles = StyleSheet.create({
   quickCard: {
     flex: 1,
     minHeight: 102,
+  },
+  primaryActionPressable: {
+    width: '100%',
+  },
+  primaryActionCard: {
+    minHeight: 92,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  primaryActionCopy: {
+    flex: 1,
+  },
+  primaryActionTitle: {
+    color: '#1A1A2E',
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: '800',
+  },
+  primaryActionSub: {
+    marginTop: 3,
+    color: '#4A5568',
+    fontSize: 12,
+    lineHeight: 16,
   },
   quickIconWrap: {
     width: 36,
