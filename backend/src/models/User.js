@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { SUBSCRIPTION_TIERS, getTierAccess } = require('../services/subscriptionAccess');
 
 const ROLES = ['participant', 'caregiver', 'provider', 'admin'];
 
@@ -35,6 +36,7 @@ const userSchema = new mongoose.Schema(
 
     // Provider fields (denormalized pointer; full detail lives in ProviderProfile)
     providerProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'ProviderProfile' },
+    subscriptionTier: { type: String, enum: SUBSCRIPTION_TIERS, default: 'starter' },
 
     // Shared preferences
     language: { type: String, default: 'en' },
@@ -61,6 +63,7 @@ userSchema.methods.comparePassword = function comparePassword(candidate) {
 userSchema.methods.toSafeJSON = function toSafeJSON() {
   const obj = this.toObject();
   delete obj.password;
+  obj.subscriptionAccess = getTierAccess(obj.subscriptionTier);
   return obj;
 };
 
