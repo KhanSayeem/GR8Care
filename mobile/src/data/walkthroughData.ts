@@ -54,23 +54,59 @@ export const wellnessItems = [
 export const educationTopics = [
   {
     title: 'Understanding NDIS goals',
-    category: 'Participant basics',
+    category: 'NDIS Basics',
     readTime: '4 min',
+    language: 'English, Bengali available',
     summary: 'Plain-language guide to turning support needs into goals.',
+    detail:
+      'Goals describe what a participant wants to work toward. Supports should connect back to those goals and be reviewed with the participant and their trusted supporters.',
   },
   {
     title: 'WHODAS overview',
-    category: 'Assessment',
+    category: 'Support Education',
     readTime: '6 min',
+    language: 'English',
     summary: 'What the domains mean and how support teams can explain them.',
+    detail:
+      'WHODAS language can help people talk about daily functioning, but this app does not score, diagnose, or replace a qualified assessment.',
   },
   {
     title: 'Preparing for plan review',
-    category: 'Planning',
+    category: 'Funding Education',
     readTime: '5 min',
+    language: 'English, Arabic available',
     summary: 'Documents, examples, and outcomes to collect before review day.',
+    detail:
+      'Bring examples, invoices, reports, and plain notes about what has changed. This guide is education only and does not approve funding.',
+  },
+  {
+    title: 'Provider communication basics',
+    category: 'Provider Education',
+    readTime: '3 min',
+    language: 'English',
+    summary: 'How providers can explain service boundaries and next steps clearly.',
+    detail:
+      'Use plain language, confirm consent, and explain where official provider policies or NDIA channels are required.',
   },
 ];
+
+export const educationCategories = ['NDIS Basics', 'Funding Education', 'Support Education', 'Provider Education'];
+
+export const whodasDomains = [
+  { title: 'Cognition', body: 'Understanding, learning, remembering, and communicating.' },
+  { title: 'Mobility', body: 'Moving around at home, in the community, and between places.' },
+  { title: 'Self-care', body: 'Personal care routines such as washing, dressing, and eating.' },
+  { title: 'Getting along', body: 'Interacting with family, workers, providers, and community members.' },
+  { title: 'Life activities', body: 'Home tasks, study, work, and other daily responsibilities.' },
+  { title: 'Participation', body: 'Joining community, social, civic, and cultural life.' },
+];
+
+export const knowledgeAgentAnswer = {
+  question: 'What should I bring to a plan review?',
+  sources: ['Preparing for plan review', 'Understanding NDIS goals'],
+  answer:
+    'Bring examples of support outcomes, invoices, reports, and notes about changed needs. Use official NDIA channels for decisions or plan changes.',
+};
 
 export const providerMatches = [
   {
