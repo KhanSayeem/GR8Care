@@ -3,9 +3,29 @@ export const careSummary = {
   planWindow: 'Aug 2026',
   activeGoal: 'Build confidence with community access',
   nextVisit: 'Today, 3:30 PM',
-  fundingUsed: 0.58,
   weeklyHours: 14,
 };
+
+export const fundingCategories = [
+  {
+    label: 'Core Supports',
+    allocation: 18000,
+    used: 8240,
+    tone: 'teal-dark' as const,
+  },
+  {
+    label: 'Capacity Building',
+    allocation: 8500,
+    used: 3100,
+    tone: 'provider-green' as const,
+  },
+  {
+    label: 'Capital Supports',
+    allocation: 5000,
+    used: 5200,
+    tone: 'error' as const,
+  },
+];
 
 export const shiftTasks = [
   { label: 'Morning check-in', status: 'Complete', tone: 'success' as const },
@@ -74,7 +94,7 @@ export const providerMatches = [
 ];
 
 export const fundingTransactions = [
-  { label: 'Community access support', date: 'Aug 02', amount: '$420', tone: 'success' as const },
-  { label: 'Transport assistance', date: 'Jul 30', amount: '$86', tone: 'info' as const },
-  { label: 'Budget threshold review', date: 'Jul 28', amount: '72%', tone: 'warning' as const },
+  { label: 'Daily Living - Maria R.', date: '9 Jan 2025', amount: -95, tone: 'error' as const },
+  { label: 'Speech Therapy - Aisha S.', date: '7 Jan 2025', amount: -110, tone: 'error' as const },
+  { label: 'Transport assistance', date: '5 Jan 2025', amount: -42, tone: 'info' as const },
 ];
