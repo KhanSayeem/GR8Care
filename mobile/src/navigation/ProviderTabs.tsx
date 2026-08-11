@@ -1,17 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
-import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
-import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
 import { tabIcon } from './tabIcons';
 
 export type ProviderTabParamList = {
   Dashboard: undefined;
-  Schedule: undefined;
-  Requests: undefined;
-  Documents: undefined;
+  Resources: undefined;
+  Templates: undefined;
+  Workforce: undefined;
   Settings: undefined;
 };
 
@@ -29,11 +26,17 @@ export function ProviderTabs() {
       }}
     >
       <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}>
-        {() => <HomeScreen roleLabel="Support Worker" />}
+        {() => <HomeScreen roleLabel="Provider" providerSection="dashboard" />}
       </Tab.Screen>
-      <Tab.Screen name="Schedule" options={{ tabBarLabel: 'Wellness', tabBarIcon: tabIcon('heart', 'heart-outline') }} component={WellnessScreen} />
-      <Tab.Screen name="Requests" options={{ tabBarLabel: 'Match', tabBarIcon: tabIcon('search', 'search-outline') }} component={MatchingScreen} />
-      <Tab.Screen name="Documents" options={{ tabBarLabel: 'Learn', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
+      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }}>
+        {() => <HomeScreen roleLabel="Provider" providerSection="resources" />}
+      </Tab.Screen>
+      <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
+        {() => <HomeScreen roleLabel="Provider" providerSection="templates" />}
+      </Tab.Screen>
+      <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }}>
+        {() => <HomeScreen roleLabel="Provider" providerSection="workforce" />}
+      </Tab.Screen>
       <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={ProfileScreen} />
     </Tab.Navigator>
   );
