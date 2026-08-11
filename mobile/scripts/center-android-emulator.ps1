@@ -1,6 +1,6 @@
 param(
   [int]$WaitSeconds = 60,
-  [string]$AvdName = "GR8Care_API_34",
+  [string]$AvdName = $env:GR8CARE_ANDROID_AVD_NAME,
   [int]$StabilizeSeconds = 12
 )
 
@@ -15,9 +15,9 @@ $targetX = [Math]::Max($workArea.Left, [int]($workArea.Left + (($workArea.Width 
 $targetY = [Math]::Max($workArea.Top, [int]($workArea.Top + (($workArea.Height - $targetHeight) / 2)))
 
 $androidUserHome = Join-Path $env:USERPROFILE ".android"
-$avdUserIni = Join-Path $androidUserHome "avd\$AvdName.avd\emulator-user.ini"
+$avdUserIni = if ($AvdName) { Join-Path $androidUserHome "avd\$AvdName.avd\emulator-user.ini" } else { $null }
 
-if (Test-Path -LiteralPath $avdUserIni) {
+if ($avdUserIni -and (Test-Path -LiteralPath $avdUserIni)) {
   $settings = [ordered]@{
     "window.x" = $targetX
     "window.y" = $targetY
@@ -91,7 +91,7 @@ function Get-EmulatorWindows {
     [void][Win32WindowTools]::GetWindowThreadProcessId($hWnd, [ref]$windowProcessId)
     $windowProcess = Get-Process -Id $windowProcessId -ErrorAction SilentlyContinue
 
-    $isEmulatorTitle = $title -like "Android Emulator*" -or $title -like "*$AvdName*"
+    $isEmulatorTitle = $title -like "Android Emulator*" -or ($AvdName -and $title -like "*$AvdName*")
     $isEmulatorProcess = $windowProcess -and ($windowProcess.ProcessName -like "qemu*" -or $windowProcess.ProcessName -like "emulator*")
 
     if ($isEmulatorTitle -or $isEmulatorProcess) {

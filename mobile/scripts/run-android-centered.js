@@ -81,10 +81,11 @@ function findFreePort(startPort) {
 
 async function main() {
   const port = findFreePort(8081);
+  const forwardedArgs = process.argv.slice(2);
   const command = fs.existsSync(expoBin) ? expoBin : isWindows ? 'npx.cmd' : 'npx';
   const args = command.includes('npx')
-    ? ['expo', 'start', '--android', '--port', String(port)]
-    : ['start', '--android', '--port', String(port)];
+    ? ['expo', 'start', '--android', '--port', String(port), ...forwardedArgs]
+    : ['start', '--android', '--port', String(port), ...forwardedArgs];
   const result = isWindows
     ? spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/c', 'call', command, ...args], {
         stdio: 'inherit',

@@ -4,7 +4,8 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "node ./scripts/run-android-centered.js",
+    "android": "expo start --android",
+    "android:centered": "node ./scripts/run-android-centered.js",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src App.tsx",
