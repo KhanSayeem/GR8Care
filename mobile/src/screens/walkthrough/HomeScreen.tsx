@@ -8,7 +8,10 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface HomeScreenProps {
   roleLabel: string;
+  providerSection?: ProviderSection;
 }
+
+type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
 
 const participantQuickActions: Array<{
   title: string;
@@ -23,18 +26,37 @@ const participantQuickActions: Array<{
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
 ];
 
-const workerQuickActions: Array<{
+const providerQuickActions: Array<{
   title: string;
   subtitle: string;
   icon: IoniconName;
   color: string;
   bg: string;
 }> = [
-  { title: 'Ask S-TRAH AI', subtitle: 'Education only', icon: 'school', color: '#0B4F6C', bg: '#D0EAF2' },
-  { title: 'Shift Note AI', subtitle: 'Review draft', icon: 'mic', color: '#E8734A', bg: '#FFF1EA' },
+  { title: 'Resources', subtitle: 'Education guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2' },
+  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
-  { title: 'Workforce tools', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
+  { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
+
+const providerSectionCopy: Record<ProviderSection, { title: string; description: string }> = {
+  dashboard: {
+    title: 'Provider learning hub',
+    description: 'Education resources, example templates, and workforce tools for everyday practice.',
+  },
+  resources: {
+    title: 'Education resources',
+    description: 'Plain-language guides and prompts for support conversations and workforce learning.',
+  },
+  templates: {
+    title: 'Template library',
+    description: 'Example structures for notes, communication, and education guides.',
+  },
+  workforce: {
+    title: 'Workforce tools',
+    description: 'Practice prompts for communication, boundaries, escalation, and worker-owned drafting.',
+  },
+};
 
 function formatCurrency(value: number) {
   const amount = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -53,10 +75,13 @@ function QuickActionCard({ title, subtitle, icon, color, bg }: (typeof participa
   );
 }
 
-export function HomeScreen({ roleLabel }: HomeScreenProps) {
-  const isWorkerDashboard = roleLabel === 'Support Worker';
-  const heroTitle = isWorkerDashboard ? 'Workforce resources' : careSummary.participantName;
-  const quickActions = isWorkerDashboard ? workerQuickActions : participantQuickActions;
+export function HomeScreen({ roleLabel, providerSection = 'dashboard' }: HomeScreenProps) {
+  const isProviderDashboard = roleLabel === 'Provider';
+  const heroTitle = isProviderDashboard ? providerSectionCopy[providerSection].title : careSummary.participantName;
+  const quickActions = isProviderDashboard ? providerQuickActions : participantQuickActions;
+  const visibleResources = providerSection === 'workforce'
+    ? workforceResources.filter((resource) => resource.tag === 'Drafting' || resource.tag === 'Practice')
+    : workforceResources;
 
   return (
     <>
@@ -79,14 +104,14 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
               <Text style={styles.rolePillText}>{roleLabel}</Text>
             </View>
             <View style={styles.zonePill}>
-              <Ionicons name="location" color="#0B4F6C" size={12} />
-              <Text style={styles.zonePillText}>Parramatta LGA Zone</Text>
+              <Ionicons name={isProviderDashboard ? 'school' : 'location'} color="#0B4F6C" size={12} />
+              <Text style={styles.zonePillText}>{isProviderDashboard ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
             </View>
           </View>
           <View style={styles.educationStrip}>
             <Ionicons name="book" color="#0B4F6C" size={14} />
             <Text style={styles.educationStripText}>
-              {isWorkerDashboard ? 'Resources, templates, and workforce tools for the MVP walkthrough' : 'S-TRAH explains NDIS questions in plain language'}
+              {isProviderDashboard ? providerSectionCopy[providerSection].description : 'S-TRAH explains NDIS questions in plain language'}
             </Text>
           </View>
         </View>
@@ -98,48 +123,50 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
             ))}
           </View>
 
-          {isWorkerDashboard ? (
+          {isProviderDashboard ? (
             <>
-              <Card style={styles.fundingCard}>
-                <Text style={styles.sectionLabel}>Workforce Resource Hub</Text>
-                <View style={styles.taskStack}>
-                  {workforceResources.map((resource) => (
-                    <View key={resource.title} style={styles.taskRow}>
-                      <View style={styles.bookingCopy}>
-                        <Text style={styles.taskText}>{resource.title}</Text>
-                        <Text style={styles.bookingService}>{resource.body}</Text>
-                      </View>
-                      <Badge label={resource.tag} tone="info" />
-                    </View>
-                  ))}
-                </View>
-              </Card>
-
-              <Card style={styles.fundingCard}>
-                <Text style={styles.sectionLabel}>Template Library: educational examples</Text>
-                <Text style={styles.bookingService}>
-                  Shift note structures, communication templates, and education guides for walkthrough practice.
-                </Text>
-                <View style={styles.taskStack}>
-                  {templateExamples.map((template) => (
-                    <View key={template.title} style={styles.templateExample}>
-                      <View style={styles.taskRow}>
+              {providerSection !== 'templates' ? (
+                <Card style={styles.fundingCard}>
+                  <Text style={styles.sectionLabel}>{providerSection === 'workforce' ? 'Workforce practice' : 'Resource collection'}</Text>
+                  <View style={styles.taskStack}>
+                    {visibleResources.map((resource) => (
+                      <View key={resource.title} style={styles.taskRow}>
                         <View style={styles.bookingCopy}>
-                          <Text style={styles.taskText}>{template.title}</Text>
-                          <Text style={styles.bookingService}>{template.summary}</Text>
+                          <Text style={styles.taskText}>{resource.title}</Text>
+                          <Text style={styles.bookingService}>{resource.body}</Text>
                         </View>
-                        <Badge label={template.category} tone="info" />
+                        <Badge label={resource.tag} tone="info" />
                       </View>
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.templateDisclaimer}>
-                  <Text style={styles.taskText}>Educational examples only</Text>
-                  <Text style={styles.bookingService}>
-                    Templates are not audit documents, compliance documents, official records, or certification tools.
-                  </Text>
-                </View>
-              </Card>
+                    ))}
+                  </View>
+                </Card>
+              ) : null}
+
+              {providerSection !== 'resources' && providerSection !== 'workforce' ? (
+                <Card style={styles.fundingCard}>
+                  <Text style={styles.sectionLabel}>Educational examples</Text>
+                  <Text style={styles.bookingService}>Use these structures for learning and practice, not as official records.</Text>
+                  <View style={styles.taskStack}>
+                    {templateExamples.map((template) => (
+                      <View key={template.title} style={styles.templateExample}>
+                        <View style={styles.taskRow}>
+                          <View style={styles.bookingCopy}>
+                            <Text style={styles.taskText}>{template.title}</Text>
+                            <Text style={styles.bookingService}>{template.summary}</Text>
+                          </View>
+                          <Badge label={template.category} tone="info" />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                  <View style={styles.templateDisclaimer}>
+                    <Text style={styles.taskText}>Educational examples only</Text>
+                    <Text style={styles.bookingService}>
+                      Templates are not audit documents, compliance documents, official records, or certification tools.
+                    </Text>
+                  </View>
+                </Card>
+              ) : null}
             </>
           ) : (
             <>
