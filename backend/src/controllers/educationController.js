@@ -1,5 +1,6 @@
 const { EDUCATION_CATEGORIES } = require('../models/EducationContent');
 const { EDUCATION_BOUNDARY, getContentById, listCategories, listContent } = require('../services/educationContent');
+const { askKnowledgeAgent, getKnowledgeIndex } = require('./knowledgeAgentController');
 
 async function getEducationCategories(req, res) {
   res.json({
@@ -38,7 +39,9 @@ async function getEducationContentDetail(req, res) {
 }
 
 module.exports = {
+  askKnowledgeAgent,
   getEducationCategories,
   getEducationContent,
   getEducationContentDetail,
+  getKnowledgeIndex,
 };
