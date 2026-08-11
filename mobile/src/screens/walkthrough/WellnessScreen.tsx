@@ -56,6 +56,14 @@ export function WellnessScreen() {
       title="Wellness and shift notes"
       subtitle="Short prompts that help workers reset, document clearly, and keep escalation boundaries visible."
     >
+      <Card variant="highlight">
+        <Text className="font-caption text-label uppercase text-teal-dark">Welcome back</Text>
+        <Text className="mt-2 font-heading text-h2 text-text-dark">Thank you for supporting participants today</Text>
+        <Text className="mt-2 font-body text-body text-text-mid">
+          Use this MVP screen for a simple reset, worker-owned shift note drafting, and clear escalation boundaries.
+        </Text>
+      </Card>
+
       <Card variant="warning">
         <View className="flex-row flex-wrap items-start justify-between gap-2">
           <View className="flex-1">
