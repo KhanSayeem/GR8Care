@@ -116,22 +116,29 @@ export function HomeScreen({ roleLabel }: HomeScreenProps) {
               </Card>
 
               <Card style={styles.fundingCard}>
-                <Text style={styles.sectionLabel}>Template Library</Text>
+                <Text style={styles.sectionLabel}>Template Library: educational examples</Text>
+                <Text style={styles.bookingService}>
+                  Shift note structures, communication templates, and education guides for walkthrough practice.
+                </Text>
                 <View style={styles.taskStack}>
                   {templateExamples.map((template) => (
-                    <View key={template.title}>
-                      <Text style={styles.taskText}>{template.title}</Text>
-                      <Text style={styles.bookingService}>{template.summary}</Text>
+                    <View key={template.title} style={styles.templateExample}>
+                      <View style={styles.taskRow}>
+                        <View style={styles.bookingCopy}>
+                          <Text style={styles.taskText}>{template.title}</Text>
+                          <Text style={styles.bookingService}>{template.summary}</Text>
+                        </View>
+                        <Badge label={template.category} tone="info" />
+                      </View>
                     </View>
                   ))}
                 </View>
-              </Card>
-
-              <Card variant="warning">
-                <Text style={styles.taskText}>Educational examples only</Text>
-                <Text style={styles.bookingService}>
-                  Templates are not audit documents, compliance documents, official records, or certification tools.
-                </Text>
+                <View style={styles.templateDisclaimer}>
+                  <Text style={styles.taskText}>Educational examples only</Text>
+                  <Text style={styles.bookingService}>
+                    Templates are not audit documents, compliance documents, official records, or certification tools.
+                  </Text>
+                </View>
               </Card>
             </>
           ) : (
@@ -432,6 +439,17 @@ const styles = StyleSheet.create({
   },
   taskStack: {
     gap: 12,
+  },
+  templateExample: {
+    paddingTop: 2,
+  },
+  templateDisclaimer: {
+    marginTop: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#F2D6A2',
+    backgroundColor: '#FFF7E6',
+    padding: 12,
   },
   taskRow: {
     flexDirection: 'row',
