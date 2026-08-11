@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Badge, Button, Card } from '../../components';
-import { educationCategories, educationTopics, knowledgeAgentAnswer, whodasDomains } from '../../data/walkthroughData';
+import { educationCategories, educationTopics, knowledgeAgentAnswer, templateExamples, whodasDomains } from '../../data/walkthroughData';
 import { ScreenShell } from './ScreenShell';
 
 export function EducationLibraryScreen() {
@@ -109,6 +109,23 @@ export function EducationLibraryScreen() {
           <Text className="font-body text-caption text-text-mid">
             Education only. This is not legal advice, funding approval, or an official NDIA communication channel.
           </Text>
+        </View>
+      </Card>
+
+      <Card variant="highlight">
+        <Text className="font-caption text-label uppercase text-teal-dark">Template library</Text>
+        <Text className="mt-2 font-heading text-h2 text-text-dark">Educational examples</Text>
+        <Text className="mt-2 font-body text-body text-text-mid">
+          Example structures for support workers and providers. These are not audit documents, compliance documents, official records, or certification tools.
+        </Text>
+        <View className="mt-4 gap-3">
+          {templateExamples.map((template) => (
+            <View key={template.title} className="rounded-md border border-border bg-white p-3">
+              <Text className="font-caption text-label uppercase text-coral">{template.category}</Text>
+              <Text className="mt-1 font-body-medium text-caption text-text-dark">{template.title}</Text>
+              <Text className="mt-1 font-body text-caption text-text-mid">{template.summary}</Text>
+            </View>
+          ))}
         </View>
       </Card>
 
