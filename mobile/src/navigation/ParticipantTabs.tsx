@@ -48,7 +48,7 @@ export function ParticipantTabs() {
         return <ProfileScreen />;
       case 'home':
       default:
-        return <HomeScreen roleLabel="Participant" />;
+        return <HomeScreen roleLabel="Participant" onOpenEducation={() => setActiveTab('learn')} />;
     }
   }, [activeTab]);
 

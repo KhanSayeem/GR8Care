@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge, Card, ProgressBar } from '../../components';
 import { careSummary, fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
@@ -9,6 +9,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 interface HomeScreenProps {
   roleLabel: string;
   providerSection?: ProviderSection;
+  onOpenEducation?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -19,8 +20,9 @@ const participantQuickActions: Array<{
   icon: IoniconName;
   color: string;
   bg: string;
+  educationShortcut?: boolean;
 }> = [
-  { title: 'AI Educator', subtitle: 'Ask anything', icon: 'school', color: '#0B4F6C', bg: '#D0EAF2' },
+  { title: 'Education Library', subtitle: 'Browse categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Find Provider', subtitle: '40+ nearby', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF' },
   { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
@@ -32,17 +34,18 @@ const providerQuickActions: Array<{
   icon: IoniconName;
   color: string;
   bg: string;
+  educationShortcut?: boolean;
 }> = [
-  { title: 'Resources', subtitle: 'Education guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2' },
-  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA' },
+  { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
+  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
   { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
 
 const providerSectionCopy: Record<ProviderSection, { title: string; description: string }> = {
   dashboard: {
-    title: 'Provider learning hub',
-    description: 'Education resources, example templates, and workforce tools for everyday practice.',
+    title: 'Education hub',
+    description: 'NDIS education resources, example templates, and workforce tools for everyday practice.',
   },
   resources: {
     title: 'Education resources',
@@ -63,22 +66,33 @@ function formatCurrency(value: number) {
   return value < 0 ? `-$${amount}` : `$${amount}`;
 }
 
-function QuickActionCard({ title, subtitle, icon, color, bg }: (typeof participantQuickActions)[number]) {
+function QuickActionCard({
+  title,
+  subtitle,
+  icon,
+  color,
+  bg,
+  onPress,
+}: (typeof participantQuickActions)[number] & { onPress?: () => void }) {
   return (
-    <Card style={styles.quickCard}>
-      <View style={[styles.quickIconWrap, { backgroundColor: bg }]}>
-        <Ionicons name={icon} color={color} size={25} />
-      </View>
-      <Text style={styles.quickTitle}>{title}</Text>
-      <Text style={styles.quickSub}>{subtitle}</Text>
-    </Card>
+    <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress} style={styles.quickPressable}>
+      <Card style={styles.quickCard}>
+        <View style={[styles.quickIconWrap, { backgroundColor: bg }]}>
+          <Ionicons name={icon} color={color} size={25} />
+        </View>
+        <Text style={styles.quickTitle}>{title}</Text>
+        <Text style={styles.quickSub}>{subtitle}</Text>
+      </Card>
+    </Pressable>
   );
 }
 
-export function HomeScreen({ roleLabel, providerSection = 'dashboard' }: HomeScreenProps) {
-  const isProviderDashboard = roleLabel === 'Provider';
-  const heroTitle = isProviderDashboard ? providerSectionCopy[providerSection].title : careSummary.participantName;
-  const quickActions = isProviderDashboard ? providerQuickActions : participantQuickActions;
+export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation }: HomeScreenProps) {
+  const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
+  const heroTitle = isProviderShell
+    ? `${roleLabel} ${providerSectionCopy[providerSection].title.toLowerCase()}`
+    : careSummary.participantName;
+  const quickActions = isProviderShell ? providerQuickActions : participantQuickActions;
   const visibleResources = providerSection === 'workforce'
     ? workforceResources.filter((resource) => resource.tag === 'Drafting' || resource.tag === 'Practice')
     : workforceResources;
@@ -104,14 +118,14 @@ export function HomeScreen({ roleLabel, providerSection = 'dashboard' }: HomeScr
               <Text style={styles.rolePillText}>{roleLabel}</Text>
             </View>
             <View style={styles.zonePill}>
-              <Ionicons name={isProviderDashboard ? 'school' : 'location'} color="#0B4F6C" size={12} />
-              <Text style={styles.zonePillText}>{isProviderDashboard ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
+              <Ionicons name={isProviderShell ? 'school' : 'location'} color="#0B4F6C" size={12} />
+              <Text style={styles.zonePillText}>{isProviderShell ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
             </View>
           </View>
           <View style={styles.educationStrip}>
             <Ionicons name="book" color="#0B4F6C" size={14} />
             <Text style={styles.educationStripText}>
-              {isProviderDashboard ? providerSectionCopy[providerSection].description : 'S-TRAH explains NDIS questions in plain language'}
+              {isProviderShell ? providerSectionCopy[providerSection].description : 'Browse NDIS education in plain-language categories'}
             </Text>
           </View>
         </View>
@@ -119,11 +133,11 @@ export function HomeScreen({ roleLabel, providerSection = 'dashboard' }: HomeScr
         <View style={styles.content}>
           <View style={styles.quickGrid}>
             {quickActions.map((action) => (
-              <QuickActionCard key={action.title} {...action} />
+              <QuickActionCard key={action.title} {...action} onPress={action.educationShortcut ? onOpenEducation : undefined} />
             ))}
           </View>
 
-          {isProviderDashboard ? (
+          {isProviderShell ? (
             <>
               {providerSection !== 'templates' ? (
                 <Card style={styles.fundingCard}>
@@ -346,9 +360,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  quickCard: {
+  quickPressable: {
     flexBasis: '47%',
     flexGrow: 1,
+  },
+  quickCard: {
+    flex: 1,
     minHeight: 102,
   },
   quickIconWrap: {

@@ -173,6 +173,41 @@ export const educationTopics = [
 
 export const educationCategories = ['NDIS Basics', 'Funding Education', 'Support Education', 'Provider Education'];
 
+export const educationCategoryGuides = [
+  {
+    name: 'NDIS Basics',
+    audience: 'Participants and families',
+    icon: 'compass',
+    summary: 'Start with goals, plan language, and how everyday supports connect to participant choice.',
+    framing: 'Use this category when someone needs plain-language context before a planning or service conversation.',
+    quickAccess: 'Start with goals',
+  },
+  {
+    name: 'Funding Education',
+    audience: 'Participants and coordinators',
+    icon: 'wallet',
+    summary: 'Learn how to prepare examples, track support outcomes, and talk about changed needs.',
+    framing: 'Use this category to prepare for funding conversations without treating the app as an approval channel.',
+    quickAccess: 'Review funding prep',
+  },
+  {
+    name: 'Support Education',
+    audience: 'Support workers',
+    icon: 'people',
+    summary: 'Explain support practice, WHODAS language, daily functioning, and communication boundaries.',
+    framing: 'Use this category for worker learning prompts and participant-facing explanations.',
+    quickAccess: 'Explain supports',
+  },
+  {
+    name: 'Provider Education',
+    audience: 'Providers',
+    icon: 'business',
+    summary: 'Guide service-boundary conversations, consent reminders, and provider communication basics.',
+    framing: 'Use this category for organisation-level education and clear next-step conversations.',
+    quickAccess: 'Open provider guide',
+  },
+];
+
 export const whodasDomains = [
   { title: 'Cognition', body: 'Understanding, learning, remembering, and communicating.' },
   { title: 'Mobility', body: 'Moving around at home, in the community, and between places.' },
@@ -183,8 +218,13 @@ export const whodasDomains = [
 ];
 
 export const knowledgeAgentAnswer = {
+  mode: 'Retrieval knowledge agent',
   question: 'What should I bring to a plan review?',
   sources: ['Preparing for plan review', 'Understanding NDIS goals'],
+  citations: [
+    { title: 'Preparing for plan review', category: 'Funding Education', sourceReference: 'Education library seed content', score: 'High relevance' },
+    { title: 'Understanding NDIS goals', category: 'NDIS Basics', sourceReference: 'Education library seed content', score: 'Supporting context' },
+  ],
   answer:
     'Bring examples of support outcomes, invoices, reports, and notes about changed needs. Use official NDIA channels for decisions or plan changes.',
 };
