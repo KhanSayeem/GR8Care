@@ -7,6 +7,7 @@ export interface AuthUser {
   fullName: string;
   email: string;
   role: Role;
+  language: string;
 }
 
 interface AuthState {

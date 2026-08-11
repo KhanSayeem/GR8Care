@@ -28,6 +28,7 @@ describe('Auth API', () => {
     email: 'ada@example.com',
     password: 'supersecret',
     role: 'participant',
+    language: 'en',
   };
 
   it('registers a new user', async () => {
@@ -35,7 +36,68 @@ describe('Auth API', () => {
     expect(res.status).toBe(201);
     expect(res.body.token).toBeDefined();
     expect(res.body.user.email).toBe(credentials.email);
+    expect(res.body.user.role).toBe(credentials.role);
+    expect(res.body.user.language).toBe(credentials.language);
     expect(res.body.user.password).toBeUndefined();
+  });
+
+  it('registers a Support Worker with MVP signup fields only', async () => {
+    const supportWorkerCredentials = {
+      fullName: 'Sam Worker',
+      email: 'sam.worker@example.com',
+      password: 'supersecret',
+      role: 'supportWorker',
+      language: 'bn',
+      ndisNumber: 'NDIS-123',
+      subscriptionTier: 'enterprise',
+      identityVerificationStatus: 'verified',
+      providerRegistrationVerified: true,
+      paymentMethodId: 'pm_test',
+    };
+
+    const res = await request(app).post('/auth/register').send(supportWorkerCredentials);
+    expect(res.status).toBe(201);
+    expect(res.body.user).toEqual(
+      expect.objectContaining({
+        fullName: supportWorkerCredentials.fullName,
+        email: supportWorkerCredentials.email,
+        role: 'supportWorker',
+        language: 'bn',
+      })
+    );
+    expect(res.body.user.password).toBeUndefined();
+    expect(res.body.user.ndisNumber).toBeUndefined();
+    expect(res.body.user.subscriptionTier).toBe('starter');
+    expect(res.body.user).not.toHaveProperty('identityVerificationStatus');
+    expect(res.body.user).not.toHaveProperty('providerRegistrationVerified');
+    expect(res.body.user).not.toHaveProperty('paymentMethodId');
+
+    const storedUser = await mongoose.connection
+      .collection('users')
+      .findOne({ email: supportWorkerCredentials.email });
+    expect(storedUser.password).toBeDefined();
+    expect(storedUser.password).not.toBe(supportWorkerCredentials.password);
+    expect(storedUser.role).toBe('supportWorker');
+    expect(storedUser.language).toBe('bn');
+    expect(storedUser.ndisNumber).toBeUndefined();
+    expect(storedUser.subscriptionTier).toBe('starter');
+    expect(storedUser.identityVerificationStatus).toBeUndefined();
+    expect(storedUser.providerRegistrationVerified).toBeUndefined();
+    expect(storedUser.paymentMethodId).toBeUndefined();
+  });
+
+  it('rejects unsupported roles during registration', async () => {
+    const res = await request(app)
+      .post('/auth/register')
+      .send({
+        fullName: 'Invalid Role',
+        email: 'invalid-role@example.com',
+        password: 'supersecret',
+        role: 'auditor',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Unsupported role');
   });
 
   it('rejects duplicate registration', async () => {
