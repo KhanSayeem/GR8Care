@@ -33,7 +33,7 @@ export function EducationLibraryScreen() {
         <Text className="font-caption text-label uppercase text-teal-dark">Knowledge Agent</Text>
         <Text className="mt-2 font-heading text-h2 text-text-dark">Ask the NDIS library</Text>
         <Text className="mt-2 font-body text-body text-text-mid">
-          Search education content only. Answers are retrieved from library topics, not official NDIA, legal, clinical, or funding decisions.
+          Search education content only. This is not a live interpreter, clinical translation, legal advice, an official NDIA channel, funding approval, or an individual NDIA decision review.
         </Text>
         <TextInput
           accessibilityLabel="Ask an education question"
@@ -57,6 +57,9 @@ export function EducationLibraryScreen() {
               <Badge label="Educational only" tone="info" />
             </View>
             <Text className="mt-2 font-body text-body text-text-mid">{knowledgeAgentAnswer.answer}</Text>
+            <Text className="mt-3 font-body text-caption text-text-mid">
+              Use official NDIA channels, qualified interpreters, or provider policy when a decision, clinical meaning, translation, or legal question is involved.
+            </Text>
             <Text className="mt-3 font-caption text-label uppercase text-text-mid">Retrieved from</Text>
             <Text className="mt-1 font-body text-caption text-text-mid">{knowledgeAgentAnswer.sources.join(' + ')}</Text>
           </View>
@@ -107,7 +110,7 @@ export function EducationLibraryScreen() {
         <Text className="mt-1 font-body text-caption text-text-mid">{selectedArticle.language}</Text>
         <View className="mt-3 rounded-md border border-teal-light bg-cream p-3">
           <Text className="font-body text-caption text-text-mid">
-            Education only. This is not legal advice, funding approval, or an official NDIA communication channel.
+            Education only. This is not legal advice, clinical translation, funding approval, individual NDIA decision interpretation, or an official NDIA communication channel.
           </Text>
         </View>
       </Card>

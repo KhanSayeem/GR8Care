@@ -98,6 +98,13 @@ export const wellnessItems = [
   },
 ];
 
+export const calmingAudioItem = {
+  title: 'Two-minute calming audio',
+  duration: '2 min',
+  body: 'Optional breathing reset for support workers between appointments.',
+  boundary: 'Non-clinical support only. Not therapy, diagnosis, crisis support, or emergency help.',
+};
+
 export const educationTopics = [
   {
     title: 'Understanding NDIS goals',

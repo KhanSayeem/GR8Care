@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Badge, Button, Card } from '../../components';
-import { wellnessItems } from '../../data/walkthroughData';
+import { calmingAudioItem, wellnessItems } from '../../data/walkthroughData';
 import { ScreenShell } from './ScreenShell';
 
 export function WellnessScreen() {
@@ -9,6 +9,7 @@ export function WellnessScreen() {
   const [reviewReady, setReviewReady] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [audioPlaying, setAudioPlaying] = useState(false);
 
   const handleCaptureToggle = () => {
     setSubmitted(false);
@@ -68,7 +69,7 @@ export function WellnessScreen() {
         <View className="mt-3 rounded-md border border-teal-light bg-white p-3">
           <Text className="font-body-medium text-caption text-text-dark">Drafting aid only</Text>
           <Text className="mt-1 font-body text-caption text-text-mid">
-            This is educational support only. It is not certified, audited, or automatically submitted documentation.
+            This is educational support only. It must not invent activities, fabricate records, claim certification, or automatically submit documentation.
           </Text>
         </View>
 
@@ -115,10 +116,37 @@ export function WellnessScreen() {
             </View>
 
             <Text className="mt-2 font-body text-caption text-text-mid">
-              Copying does not save, certify, audit, or submit this note. Follow provider policy before using it.
+              Copying does not save, certify, audit, or submit this note. Follow provider policy and confirm every activity came from worker review before using it.
             </Text>
           </View>
         ) : null}
+      </Card>
+
+      <Card variant="highlight">
+        <View className="flex-row flex-wrap items-start justify-between gap-2">
+          <View className="flex-1">
+            <Text className="font-caption text-label uppercase text-teal-dark">Optional reset</Text>
+            <Text className="mt-2 font-heading text-h2 text-text-dark">{calmingAudioItem.title}</Text>
+          </View>
+          <Badge label={audioPlaying ? 'Playing' : calmingAudioItem.duration} tone={audioPlaying ? 'success' : 'info'} />
+        </View>
+
+        <Text className="mt-2 font-body text-body text-text-mid">{calmingAudioItem.body}</Text>
+
+        <View className="mt-4">
+          <Button
+            label={audioPlaying ? 'Pause audio' : 'Play audio'}
+            variant={audioPlaying ? 'secondary' : 'primary'}
+            onPress={() => setAudioPlaying((playing) => !playing)}
+          />
+        </View>
+
+        <View className="mt-3 rounded-md border border-border bg-white p-3">
+          <Text className="font-body-medium text-caption text-text-dark">
+            {audioPlaying ? 'Audio is playing' : 'Audio is paused'}
+          </Text>
+          <Text className="mt-1 font-body text-caption text-text-mid">{calmingAudioItem.boundary}</Text>
+        </View>
       </Card>
 
       <View className="gap-3">
