@@ -5,6 +5,8 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 let mongod;
 let app;
 
+jest.setTimeout(120000);
+
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongod.getUri();
@@ -15,7 +17,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await mongoose.disconnect();
-  await mongod.stop();
+  if (mongod) {
+    await mongod.stop();
+  }
 });
 
 describe('Auth API', () => {
@@ -63,6 +67,46 @@ describe('Auth API', () => {
       .set('Authorization', `Bearer ${login.body.token}`);
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(credentials.email);
+    expect(res.body.user.subscriptionAccess.tier).toBe('starter');
+    expect(res.body.user.subscriptionAccess.features).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'educationLibrary', enabled: true }),
+        expect.objectContaining({ key: 'shiftNoteDrafts', enabled: false }),
+      ])
+    );
+  });
+
+  it('returns subscription access as permission gating without payment fields', async () => {
+    const providerCredentials = {
+      fullName: 'Grace Hopper',
+      email: 'grace@example.com',
+      password: 'supersecret',
+      role: 'provider',
+      subscriptionTier: 'growth',
+    };
+
+    const registration = await request(app).post('/auth/register').send(providerCredentials);
+    expect(registration.status).toBe(201);
+    expect(registration.body.user.subscriptionAccess.features).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'educationLibrary', enabled: true }),
+        expect.objectContaining({ key: 'shiftNoteDrafts', enabled: true }),
+        expect.objectContaining({ key: 'compatibilityDemo', enabled: true }),
+        expect.objectContaining({ key: 'adminReporting', enabled: false }),
+      ])
+    );
+
+    const res = await request(app)
+      .get('/users/me/access')
+      .set('Authorization', `Bearer ${registration.body.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.access.tier).toBe('growth');
+    expect(res.body.access.boundary).toContain('Permission gating only');
+    expect(res.body.access).not.toHaveProperty('prices');
+    expect(res.body.access).not.toHaveProperty('paymentGateway');
+    expect(res.body.access).not.toHaveProperty('card');
+    expect(res.body.access).not.toHaveProperty('banking');
   });
 
   it('rejects /users/me without a token', async () => {

@@ -3,7 +3,7 @@ const { signToken } = require('../utils/jwt');
 
 async function register(req, res, next) {
   try {
-    const { fullName, email, password, role, ndisNumber } = req.body;
+    const { fullName, email, password, role, ndisNumber, subscriptionTier } = req.body;
 
     if (!fullName || !email || !password) {
       return res.status(400).json({ error: 'fullName, email, and password are required' });
@@ -17,7 +17,7 @@ async function register(req, res, next) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
 
-    const user = await User.create({ fullName, email, password, role, ndisNumber });
+    const user = await User.create({ fullName, email, password, role, ndisNumber, subscriptionTier });
     const token = signToken(user);
 
     res.status(201).json({ token, user: user.toSafeJSON() });

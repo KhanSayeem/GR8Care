@@ -56,6 +56,24 @@ export const workforceResources = [
   },
 ];
 
+export const subscriptionAccessTiers = [
+  {
+    tier: 'Starter',
+    summary: 'Education library and account basics.',
+    enabled: true,
+  },
+  {
+    tier: 'Growth',
+    summary: 'Shift Note AI drafts and compatibility demo access.',
+    enabled: true,
+  },
+  {
+    tier: 'Enterprise',
+    summary: 'Admin reporting exports for later rollout.',
+    enabled: false,
+  },
+];
+
 export const templateExamples = [
   {
     title: 'Shift note structure example',
