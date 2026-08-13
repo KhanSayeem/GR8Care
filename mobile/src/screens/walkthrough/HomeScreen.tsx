@@ -10,6 +10,7 @@ interface HomeScreenProps {
   roleLabel: string;
   providerSection?: ProviderSection;
   onOpenEducation?: () => void;
+  onOpenAvailability?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -21,6 +22,7 @@ const participantQuickActions: Array<{
   color: string;
   bg: string;
   educationShortcut?: boolean;
+  availabilityShortcut?: boolean;
 }> = [
   { title: 'Education Library', subtitle: 'Browse categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Find Provider', subtitle: '40+ nearby', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF' },
@@ -35,7 +37,9 @@ const providerQuickActions: Array<{
   color: string;
   bg: string;
   educationShortcut?: boolean;
+  availabilityShortcut?: boolean;
 }> = [
+  { title: 'Set Availability', subtitle: 'Time blocks', icon: 'calendar', color: '#0B4F6C', bg: '#D0EAF2', availabilityShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
@@ -95,7 +99,7 @@ function QuickActionCard({
   );
 }
 
-export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation }: HomeScreenProps) {
+export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation, onOpenAvailability }: HomeScreenProps) {
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
   const isSupportWorkerDashboard = roleLabel === 'Support Worker' && providerSection === 'dashboard';
   const heroTitle = isProviderShell
@@ -164,7 +168,11 @@ export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEdu
 
           <View style={styles.quickGrid}>
             {quickActions.map((action) => (
-              <QuickActionCard key={action.title} {...action} onPress={action.educationShortcut ? onOpenEducation : undefined} />
+              <QuickActionCard
+                key={action.title}
+                {...action}
+                onPress={action.educationShortcut ? onOpenEducation : action.availabilityShortcut ? onOpenAvailability : undefined}
+              />
             ))}
           </View>
 
