@@ -217,4 +217,133 @@ describe('booking creation API', () => {
     expect(missingServiceRequest.status).toBe(404);
     expect(missingServiceRequest.body.error).toBe('Service request not found');
   });
+
+  it('lists bookings scoped to the requester with upcoming and past filters', async () => {
+    const participant = await registerUser('participant', 'participant.list.booking@example.com');
+    const otherParticipant = await registerUser('participant', 'participant.other.list.booking@example.com');
+    const provider = await registerUser('provider', 'provider.list.booking@example.com');
+
+    const past = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Past support',
+      scheduledStart: new Date('2026-08-17T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-17T10:00:00.000Z'),
+      status: 'completed',
+    });
+    const upcoming = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Upcoming support',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+    await Booking.create({
+      participant: otherParticipant.user._id,
+      provider: provider.user._id,
+      service: 'Other participant support',
+      scheduledStart: new Date('2026-08-19T11:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T12:00:00.000Z'),
+      status: 'confirmed',
+    });
+
+    const upcomingRes = await request(app)
+      .get('/bookings?window=upcoming&asOf=2026-08-18T00:00:00.000Z')
+      .set('Authorization', `Bearer ${participant.token}`);
+    const pastRes = await request(app)
+      .get('/bookings?window=past&asOf=2026-08-18T00:00:00.000Z')
+      .set('Authorization', `Bearer ${participant.token}`);
+    const providerRes = await request(app)
+      .get('/bookings?window=all&status=confirmed')
+      .set('Authorization', `Bearer ${provider.token}`);
+
+    expect(upcomingRes.status).toBe(200);
+    expect(upcomingRes.body.mode).toBe('bookings');
+    expect(upcomingRes.body.bookings.map((booking) => booking.id)).toEqual([String(upcoming._id)]);
+    expect(pastRes.status).toBe(200);
+    expect(pastRes.body.bookings.map((booking) => booking.id)).toEqual([String(past._id)]);
+    expect(providerRes.status).toBe(200);
+    expect(providerRes.body.bookings.map((booking) => booking.service)).toEqual([
+      'Upcoming support',
+      'Other participant support',
+    ]);
+  });
+
+  it('cancels accessible pending or confirmed bookings without deleting records', async () => {
+    const participant = await registerUser('participant', 'participant.cancel.booking@example.com');
+    const provider = await registerUser('provider', 'provider.cancel.booking@example.com');
+    const booking = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Cancelable support',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+
+    const res = await request(app)
+      .delete(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${participant.token}`)
+      .send({ reason: 'Participant unwell' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.mode).toBe('bookingCancelled');
+    expect(res.body.booking).toEqual(
+      expect.objectContaining({
+        id: String(booking._id),
+        status: 'cancelled',
+        cancellationReason: 'Participant unwell',
+        cancelledById: participant.user._id,
+      })
+    );
+
+    const stored = await Booking.findById(booking._id);
+    expect(stored.status).toBe('cancelled');
+    expect(stored.cancelledAt).toBeTruthy();
+  });
+
+  it('rejects invalid booking list and cancellation requests', async () => {
+    const participant = await registerUser('participant', 'participant.invalid.cancel.booking@example.com');
+    const otherParticipant = await registerUser('participant', 'participant.other.invalid.cancel.booking@example.com');
+    const provider = await registerUser('provider', 'provider.invalid.cancel.booking@example.com');
+    const inaccessible = await Booking.create({
+      participant: otherParticipant.user._id,
+      provider: provider.user._id,
+      service: 'Other participant support',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+    const completed = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Completed support',
+      scheduledStart: new Date('2026-08-17T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-17T10:00:00.000Z'),
+      status: 'completed',
+    });
+
+    const invalidWindow = await request(app)
+      .get('/bookings?window=later')
+      .set('Authorization', `Bearer ${participant.token}`);
+    const invalidStatus = await request(app)
+      .get('/bookings?status=approved')
+      .set('Authorization', `Bearer ${participant.token}`);
+    const notFound = await request(app)
+      .delete(`/bookings/${inaccessible._id}`)
+      .set('Authorization', `Bearer ${participant.token}`);
+    const notCancellable = await request(app)
+      .delete(`/bookings/${completed._id}`)
+      .set('Authorization', `Bearer ${participant.token}`);
+
+    expect(invalidWindow.status).toBe(400);
+    expect(invalidWindow.body.error).toBe('window must be one of: upcoming, past, all');
+    expect(invalidStatus.status).toBe(400);
+    expect(invalidStatus.body.error).toBe('status is not supported');
+    expect(notFound.status).toBe(404);
+    expect(notFound.body.error).toBe('Booking not found');
+    expect(notCancellable.status).toBe(409);
+    expect(notCancellable.body.error).toBe('Only pending or confirmed bookings can be cancelled');
+  });
 });

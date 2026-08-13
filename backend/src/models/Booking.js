@@ -46,6 +46,12 @@ const bookingSchema = new mongoose.Schema(
     location: { type: String, trim: true, default: '' },
     notes: { type: String, trim: true, default: '' },
     cancellationReason: { type: String, trim: true, default: '' },
+    cancelledAt: { type: Date, default: null },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     metadata: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   },
   { timestamps: true }
