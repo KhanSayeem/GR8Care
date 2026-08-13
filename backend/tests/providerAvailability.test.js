@@ -14,7 +14,7 @@ let app;
 jest.setTimeout(120000);
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: 30000 } });
   process.env.MONGODB_URI = mongod.getUri();
   process.env.JWT_SECRET = 'test-secret';
   await mongoose.connect(process.env.MONGODB_URI);

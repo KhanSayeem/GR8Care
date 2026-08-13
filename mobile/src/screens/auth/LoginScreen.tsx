@@ -1,6 +1,7 @@
-import React from 'react';
-import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../../api/client';
 import { Role, useAuthStore } from '../../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -62,8 +63,62 @@ const ROLE_OPTIONS: Array<{
   },
 ];
 
+const WALKTHROUGH_PASSWORD = 'walkthrough-secret';
+
+async function fetchSession(path: '/auth/register' | '/auth/login', body: Record<string, string>) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(payload.error || `Request failed with status ${res.status}`);
+  }
+
+  return payload as { token: string; user: { _id: string; fullName: string; email: string; role: Role; language: string } };
+}
+
 export function LoginScreen() {
   const setSession = useAuthStore((state) => state.setSession);
+  const [loadingRole, setLoadingRole] = useState<Role | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const startWalkthroughSession = async (option: (typeof ROLE_OPTIONS)[number]) => {
+    setLoadingRole(option.role);
+    setError(null);
+
+    try {
+      const credentials = {
+        fullName: option.label,
+        email: option.email,
+        password: WALKTHROUGH_PASSWORD,
+        role: option.role,
+        language: 'en',
+        ...(option.role === 'provider' ? { subscriptionTier: 'growth' } : {}),
+      };
+
+      let session;
+      try {
+        session = await fetchSession('/auth/register', credentials);
+      } catch (err) {
+        if (!(err instanceof Error) || !err.message.includes('already exists')) {
+          throw err;
+        }
+        session = await fetchSession('/auth/login', {
+          email: option.email,
+          password: WALKTHROUGH_PASSWORD,
+        });
+      }
+
+      setSession(session.token, session.user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start walkthrough session.');
+    } finally {
+      setLoadingRole(null);
+    }
+  };
 
   return (
     <>
@@ -81,15 +136,9 @@ export function LoginScreen() {
             <Pressable
               key={option.role}
               accessibilityRole="button"
-              onPress={() =>
-                setSession('walkthrough-token', {
-                  _id: option.role,
-                  fullName: option.label,
-                  email: option.email,
-                  role: option.role,
-                  language: 'en',
-                })
-              }
+              accessibilityState={{ disabled: loadingRole !== null }}
+              disabled={loadingRole !== null}
+              onPress={() => startWalkthroughSession(option)}
               style={[styles.roleCard, { backgroundColor: option.bg, borderColor: option.border }]}
             >
               <View style={[styles.roleIcon, { backgroundColor: option.iconBg }]}>
@@ -99,10 +148,17 @@ export function LoginScreen() {
                 <Text style={styles.roleTitle}>{option.label}</Text>
                 <Text style={styles.roleDescription}>{option.description}</Text>
               </View>
-              <Ionicons name="chevron-forward" color={option.accent} size={20} />
+              {loadingRole === option.role ? <ActivityIndicator color={option.accent} /> : <Ionicons name="chevron-forward" color={option.accent} size={20} />}
             </Pressable>
           ))}
         </View>
+
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle" color="#E53E3E" size={18} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
 
         <Text style={styles.changeLanguage}>Change language</Text>
         </View>
@@ -193,5 +249,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
+  },
+  errorBox: {
+    marginTop: 16,
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E53E3E',
+    backgroundColor: '#FED7D7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  errorText: {
+    flex: 1,
+    color: '#E53E3E',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
   },
 });
