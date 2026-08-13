@@ -5,6 +5,7 @@ const authRoutes = require('./routes/authRoutes');
 const educationRoutes = require('./routes/educationRoutes');
 const shiftNoteRoutes = require('./routes/shiftNoteRoutes');
 const userRoutes = require('./routes/userRoutes');
+const voiceRoutes = require('./routes/voiceRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -18,6 +19,7 @@ app.use('/auth', authRoutes);
 app.use('/education', educationRoutes);
 app.use('/shift-notes', shiftNoteRoutes);
 app.use('/users', userRoutes);
+app.use('/voice', voiceRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
