@@ -4,11 +4,13 @@ import { useAuthStore } from '../store/authStore';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { SetAvailabilityScreen } from '../screens/walkthrough/SetAvailabilityScreen';
 import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
 import { tabIcon } from './tabIcons';
 
 export type ProviderTabParamList = {
   Dashboard: undefined;
+  Availability: undefined;
   Resources: undefined;
   Templates: undefined;
   Workforce: undefined;
@@ -33,8 +35,23 @@ export function ProviderTabs() {
     >
       <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}>
         {({ navigation }) => (
-          <HomeScreen roleLabel={roleLabel} providerSection="dashboard" onOpenEducation={() => navigation.navigate('Resources')} />
+          <HomeScreen
+            roleLabel={roleLabel}
+            providerSection="dashboard"
+            onOpenAvailability={() => navigation.navigate('Availability')}
+            onOpenEducation={() => navigation.navigate('Resources')}
+          />
         )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Availability"
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
+        }}
+      >
+        {({ navigation }) => <SetAvailabilityScreen onBack={() => navigation.navigate('Dashboard')} />}
       </Tab.Screen>
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
