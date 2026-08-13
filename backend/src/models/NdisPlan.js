@@ -7,6 +7,7 @@ const FUNDING_CATEGORY_LABELS = {
   capital: 'Capital Supports',
 };
 const PLAN_STATUSES = ['draft', 'active', 'expired', 'archived'];
+const BUDGET_ALERT_THRESHOLD_PERCENTAGE = 80;
 
 const fundingCategorySchema = new mongoose.Schema(
   {
@@ -55,7 +56,11 @@ ndisPlanSchema.index({ participant: 1, planNumber: 1 }, { unique: true });
 ndisPlanSchema.methods.getFundingSummary = function getFundingSummary() {
   const categories = this.fundingCategories.map((category) => {
     const remaining = category.allocation - category.spentToDate;
-    const percentageUsed = category.allocation === 0 ? 0 : Math.round((category.spentToDate / category.allocation) * 100);
+    const usagePercentage = category.allocation === 0 ? 0 : (category.spentToDate / category.allocation) * 100;
+    const percentageUsed = Math.round(usagePercentage);
+    const overBudget = remaining < 0;
+    const nearBudgetLimit = !overBudget && usagePercentage >= BUDGET_ALERT_THRESHOLD_PERCENTAGE;
+    const budgetAlertLevel = overBudget ? 'overBudget' : nearBudgetLimit ? 'warning' : null;
 
     return {
       category: category.category,
@@ -64,7 +69,9 @@ ndisPlanSchema.methods.getFundingSummary = function getFundingSummary() {
       spentToDate: category.spentToDate,
       remaining,
       percentageUsed,
-      overBudget: remaining < 0,
+      overBudget,
+      nearBudgetLimit,
+      budgetAlertLevel,
     };
   });
 
@@ -84,7 +91,8 @@ ndisPlanSchema.methods.getFundingSummary = function getFundingSummary() {
     currency: this.currency,
     categories,
     totals,
-    budgetAlerts: categories.filter((category) => category.overBudget),
+    budgetAlertThresholdPercentage: BUDGET_ALERT_THRESHOLD_PERCENTAGE,
+    budgetAlerts: categories.filter((category) => category.budgetAlertLevel),
   };
 };
 
@@ -92,3 +100,4 @@ module.exports = mongoose.model('NdisPlan', ndisPlanSchema);
 module.exports.FUNDING_CATEGORIES = FUNDING_CATEGORIES;
 module.exports.FUNDING_CATEGORY_LABELS = FUNDING_CATEGORY_LABELS;
 module.exports.PLAN_STATUSES = PLAN_STATUSES;
+module.exports.BUDGET_ALERT_THRESHOLD_PERCENTAGE = BUDGET_ALERT_THRESHOLD_PERCENTAGE;

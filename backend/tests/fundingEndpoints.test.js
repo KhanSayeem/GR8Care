@@ -44,7 +44,7 @@ async function createPlan(participantId) {
     endDate: new Date('2027-07-31T00:00:00.000Z'),
     fundingCategories: [
       { category: 'core', label: 'Core Supports', allocation: 18000, spentToDate: 8240 },
-      { category: 'capacity', label: 'Capacity Building', allocation: 8500, spentToDate: 3100 },
+      { category: 'capacity', label: 'Capacity Building', allocation: 8500, spentToDate: 6800 },
       { category: 'capital', label: 'Capital Supports', allocation: 5000, spentToDate: 5200 },
     ],
     transactions: [
@@ -86,15 +86,30 @@ describe('funding API', () => {
           percentageUsed: 46,
         }),
         expect.objectContaining({
+          category: 'capacity',
+          percentageUsed: 80,
+          overBudget: false,
+          nearBudgetLimit: true,
+          budgetAlertLevel: 'warning',
+        }),
+        expect.objectContaining({
           category: 'capital',
           remaining: -200,
           overBudget: true,
+          nearBudgetLimit: false,
+          budgetAlertLevel: 'overBudget',
         }),
       ])
     );
+    expect(res.body.summary.budgetAlertThresholdPercentage).toBe(80);
     expect(res.body.summary.budgetAlerts).toEqual([
       expect.objectContaining({
+        category: 'capacity',
+        budgetAlertLevel: 'warning',
+      }),
+      expect.objectContaining({
         category: 'capital',
+        budgetAlertLevel: 'overBudget',
       }),
     ]);
   });
