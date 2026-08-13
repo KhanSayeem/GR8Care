@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookServiceStep1Screen } from '../screens/walkthrough/BookServiceStep1Screen';
+import { BookServiceStep2Screen } from '../screens/walkthrough/BookServiceStep2Screen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
@@ -11,7 +12,7 @@ import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen'
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications' | 'bookService';
+type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications' | 'bookService' | 'bookSchedule';
 
 const tabs: Array<{
   key: TabKey;
@@ -31,6 +32,7 @@ export type ParticipantTabParamList = {
   FindProviders: undefined;
   Bookings: undefined;
   BookServiceStep1: undefined;
+  BookServiceStep2: undefined;
   Funding: undefined;
   Profile: undefined;
 };
@@ -38,7 +40,7 @@ export type ParticipantTabParamList = {
 export function ParticipantTabs() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const insets = useSafeAreaInsets();
-  const showTabBar = activeTab !== 'bookService';
+  const showTabBar = activeTab !== 'bookService' && activeTab !== 'bookSchedule';
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -53,7 +55,9 @@ export function ParticipantTabs() {
       case 'account':
         return <ProfileScreen />;
       case 'bookService':
-        return <BookServiceStep1Screen onBack={() => setActiveTab('home')} />;
+        return <BookServiceStep1Screen onBack={() => setActiveTab('home')} onContinue={() => setActiveTab('bookSchedule')} />;
+      case 'bookSchedule':
+        return <BookServiceStep2Screen onBack={() => setActiveTab('bookService')} />;
       case 'home':
       default:
         return (
