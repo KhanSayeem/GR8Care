@@ -1,3 +1,4 @@
+const { getProviderScheduleToday, getProviderStats } = require('../services/providerDashboard');
 const { saveProviderAvailability } = require('../services/providerAvailability');
 
 async function setMyAvailability(req, res) {
@@ -16,6 +17,26 @@ async function setMyAvailability(req, res) {
   }
 }
 
+async function getMyStats(req, res) {
+  const result = await getProviderStats(req.user);
+  res.json(result);
+}
+
+async function getMyScheduleToday(req, res) {
+  try {
+    const result = await getProviderScheduleToday(req.user._id, { date: req.query.date });
+    res.json(result);
+  } catch (err) {
+    if (err.status === 400) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    throw err;
+  }
+}
+
 module.exports = {
+  getMyScheduleToday,
+  getMyStats,
   setMyAvailability,
 };
