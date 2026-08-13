@@ -36,8 +36,29 @@ export interface ProviderScheduleTodayResponse {
   schedule: ProviderScheduleBlock[];
 }
 
+export type ProviderScheduleRange = 'this-week' | 'next-week' | 'month';
+
+export interface ProviderScheduleDay {
+  date: string;
+  day: string;
+  blocks: ProviderScheduleBlock[];
+}
+
+export interface ProviderScheduleResponse {
+  mode: 'providerSchedule';
+  boundary: string;
+  range: ProviderScheduleRange;
+  startDate: string | null;
+  endDate: string | null;
+  schedule: ProviderScheduleDay[];
+}
+
 export async function getProviderStats() {
   return apiFetch('/providers/me/stats') as Promise<ProviderStatsResponse>;
+}
+
+export async function getProviderSchedule(range: ProviderScheduleRange = 'this-week') {
+  return apiFetch(`/providers/me/schedule?range=${encodeURIComponent(range)}`) as Promise<ProviderScheduleResponse>;
 }
 
 export async function getProviderScheduleToday() {
