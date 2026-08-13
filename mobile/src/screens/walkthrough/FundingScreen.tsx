@@ -1,20 +1,124 @@
-import React from 'react';
-import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FundingCategoryKey, FundingCategorySummary, FundingSummary, FundingTransaction, getFundingSummary, getFundingTransactions } from '../../api/funding';
 import { Card, ProgressBar } from '../../components';
-import { fundingCategories, fundingTransactions } from '../../data/walkthroughData';
 
-function formatCurrency(value: number) {
-  const amount = Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
-  return value < 0 ? `-$${amount}` : `$${amount}`;
+type ProgressTone = 'teal-dark' | 'provider-green' | 'error';
+
+const CATEGORY_TONES: Record<FundingCategoryKey, ProgressTone> = {
+  core: 'teal-dark',
+  capacity: 'provider-green',
+  capital: 'error',
+};
+
+function formatCurrency(value: number, currency = 'AUD') {
+  const amount = Math.abs(value).toLocaleString('en-AU', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  });
+  return value < 0 ? `-${amount}` : amount;
 }
 
-const totalAllocation = fundingCategories.reduce((sum, category) => sum + category.allocation, 0);
-const totalUsed = fundingCategories.reduce((sum, category) => sum + category.used, 0);
-const totalPercent = Math.round((totalUsed / totalAllocation) * 100);
-const overBudgetCategory = fundingCategories.find((category) => category.used > category.allocation);
+function formatTransactionDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function getAccent(tone: ProgressTone) {
+  if (tone === 'teal-dark') return '#0B4F6C';
+  if (tone === 'provider-green') return '#2D9E6B';
+  return '#E53E3E';
+}
+
+function getShortCategoryLabel(label: string) {
+  return label.replace(' Supports', '').replace(' Building', '');
+}
 
 export function FundingScreen() {
+  const [summary, setSummary] = useState<FundingSummary | null>(null);
+  const [transactions, setTransactions] = useState<FundingTransaction[]>([]);
+  const [boundary, setBoundary] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currency = summary?.currency ?? 'AUD';
+  const categories = summary?.categories ?? [];
+  const totalAllocation = summary?.totals.allocation ?? 0;
+  const totalUsed = summary?.totals.spentToDate ?? 0;
+  const totalPercent = totalAllocation > 0 ? Math.round((totalUsed / totalAllocation) * 100) : 0;
+  const overBudgetCategory = summary?.budgetAlerts[0] ?? categories.find((category) => category.overBudget);
+
+  const loadFunding = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      const [summaryResult, transactionsResult] = await Promise.all([getFundingSummary(), getFundingTransactions({ limit: 10 })]);
+      setSummary(summaryResult.summary);
+      setTransactions(transactionsResult.transactions);
+      setBoundary(summaryResult.boundary || transactionsResult.boundary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Funding data could not be loaded.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFunding();
+  }, [loadFunding]);
+
+  const statusContent = useMemo(() => {
+    if (loading) {
+      return (
+        <View style={styles.statusCard}>
+          <ActivityIndicator color="#0B4F6C" />
+          <Text style={styles.statusTitle}>Loading funding tracker</Text>
+          <Text style={styles.statusBody}>Fetching your active NDIS plan summary and recent transactions.</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={[styles.statusCard, styles.statusCardWarning]}>
+          <Ionicons name="alert-circle" color="#E53E3E" size={22} />
+          <Text style={styles.statusTitle}>Funding unavailable</Text>
+          <Text style={styles.statusBody}>{error}</Text>
+          <Pressable accessibilityRole="button" style={styles.retryButton} disabled={refreshing} onPress={() => loadFunding({ silent: true })}>
+            {refreshing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.retryText}>Retry</Text>}
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (!summary || categories.length === 0) {
+      return (
+        <View style={styles.statusCard}>
+          <Ionicons name="wallet" color="#0B4F6C" size={22} />
+          <Text style={styles.statusTitle}>No active funding plan</Text>
+          <Text style={styles.statusBody}>Funding categories will appear here when the API has an active NDIS plan for this account.</Text>
+        </View>
+      );
+    }
+
+    return null;
+  }, [categories.length, error, loadFunding, loading, refreshing, summary]);
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F7F3EE" />
@@ -35,7 +139,11 @@ export function FundingScreen() {
           <View style={styles.educatorCopy}>
             <Text style={styles.educatorTitle}>Hi Amina, here is your funding snapshot</Text>
             <Text style={styles.educatorBody}>
-              You have used {formatCurrency(totalUsed)} of {formatCurrency(totalAllocation)}. Capital Supports needs review before the next booking.
+              {summary
+                ? `You have used ${formatCurrency(totalUsed, currency)} of ${formatCurrency(totalAllocation, currency)}. ${
+                    overBudgetCategory ? `${overBudgetCategory.label} needs review before the next booking.` : 'All categories are within allocation.'
+                  }`
+                : boundary || 'Your funding categories and recent plan transactions load from the GR8Care API.'}
             </Text>
           </View>
           <View style={styles.listenButton}>
@@ -44,75 +152,101 @@ export function FundingScreen() {
           </View>
         </View>
 
-        <View style={styles.usageWrap}>
-          <View style={styles.usageRing}>
-            <View style={styles.usageInner}>
-              <Text style={styles.usagePercent}>{totalPercent}%</Text>
-              <Text style={styles.usageLabel}>used</Text>
-            </View>
-          </View>
-          <View style={styles.legendRow}>
-            {fundingCategories.map((category) => (
-              <View key={category.label} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: category.tone === 'teal-dark' ? '#0B4F6C' : category.tone === 'provider-green' ? '#2D9E6B' : '#E53E3E' }]} />
-                <Text style={styles.legendText}>{category.label.replace(' Supports', '').replace(' Building', '')}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {statusContent}
 
-        {overBudgetCategory ? (
-          <View style={styles.alertBox}>
-            <Ionicons name="warning" color="#E53E3E" size={16} />
-            <Text style={styles.alertText}>
-              {overBudgetCategory.label} over budget by {formatCurrency(overBudgetCategory.used - overBudgetCategory.allocation)}
-            </Text>
-          </View>
-        ) : null}
-
-        <View style={styles.categoryStack}>
-          {fundingCategories.map((category) => {
-            const remaining = category.allocation - category.used;
-            const progress = category.used / category.allocation;
-            const isOverBudget = remaining < 0;
-            const accent = category.tone === 'teal-dark' ? '#0B4F6C' : category.tone === 'provider-green' ? '#2D9E6B' : '#E53E3E';
-
-            return (
-              <Card key={category.label} variant={isOverBudget ? 'warning' : 'default'} style={styles.categoryCard}>
-                <View style={styles.categoryHeader}>
-                  <View style={styles.categoryTitleRow}>
-                    <View style={[styles.categoryDot, { backgroundColor: accent }]} />
-                    <Text style={styles.categoryTitle}>{category.label}</Text>
-                  </View>
-                  <View style={styles.categoryAmounts}>
-                    <Text style={[styles.remainingAmount, { color: accent }]}>{formatCurrency(remaining)}</Text>
-                    <Text style={styles.allocationAmount}>/{formatCurrency(category.allocation)}</Text>
-                  </View>
+        {!statusContent ? (
+          <>
+            <View style={styles.usageWrap}>
+              <View style={styles.usageRing}>
+                <View style={styles.usageInner}>
+                  <Text style={styles.usagePercent}>{totalPercent}%</Text>
+                  <Text style={styles.usageLabel}>used</Text>
                 </View>
-                <ProgressBar progress={progress} tone={category.tone} />
-                <Text style={[styles.usedText, isOverBudget && styles.overBudgetText]}>
-                  {isOverBudget ? 'Over budget' : `${formatCurrency(category.used)} used - ${Math.round(progress * 100)}%`}
-                </Text>
-              </Card>
-            );
-          })}
-        </View>
+              </View>
+              <View style={styles.legendRow}>
+                {categories.map((category) => {
+                  const tone = CATEGORY_TONES[category.category];
+                  return (
+                    <View key={category.category} style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: getAccent(tone) }]} />
+                      <Text style={styles.legendText}>{getShortCategoryLabel(category.label)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
 
-        <Text style={styles.recentLabel}>Recent Transactions</Text>
-        <View style={styles.transactionStack}>
-          {fundingTransactions.map((transaction) => (
-            <Card key={`${transaction.label}-${transaction.date}`} style={styles.transactionCard}>
-              <View style={[styles.transactionIcon, transaction.tone === 'error' ? styles.transactionIconError : styles.transactionIconInfo]}>
-                <Ionicons name={transaction.tone === 'error' ? 'receipt' : 'car'} color={transaction.tone === 'error' ? '#E53E3E' : '#0B4F6C'} size={20} />
+            {overBudgetCategory ? (
+              <View style={styles.alertBox}>
+                <Ionicons name="warning" color="#E53E3E" size={16} />
+                <Text style={styles.alertText}>
+                  {overBudgetCategory.label} over budget by {formatCurrency(Math.abs(overBudgetCategory.remaining), currency)}
+                </Text>
               </View>
-              <View style={styles.transactionCopy}>
-                <Text style={styles.transactionTitle}>{transaction.label}</Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
-              </View>
-              <Text style={styles.transactionAmount}>{formatCurrency(transaction.amount)}</Text>
-            </Card>
-          ))}
-        </View>
+            ) : null}
+
+            <View style={styles.categoryStack}>
+              {categories.map((category: FundingCategorySummary) => {
+                const tone = CATEGORY_TONES[category.category];
+                const progress = category.allocation === 0 ? 0 : category.spentToDate / category.allocation;
+                const accent = getAccent(tone);
+
+                return (
+                  <Card key={category.category} variant={category.overBudget ? 'warning' : 'default'} style={styles.categoryCard}>
+                    <View style={styles.categoryHeader}>
+                      <View style={styles.categoryTitleRow}>
+                        <View style={[styles.categoryDot, { backgroundColor: accent }]} />
+                        <Text style={styles.categoryTitle}>{category.label}</Text>
+                      </View>
+                      <View style={styles.categoryAmounts}>
+                        <Text style={[styles.remainingAmount, { color: accent }]}>{formatCurrency(category.remaining, currency)}</Text>
+                        <Text style={styles.allocationAmount}>/{formatCurrency(category.allocation, currency)}</Text>
+                      </View>
+                    </View>
+                    <ProgressBar progress={progress} tone={tone} />
+                    <Text style={[styles.usedText, category.overBudget && styles.overBudgetText]}>
+                      {category.overBudget
+                        ? 'Over budget'
+                        : `${formatCurrency(category.spentToDate, currency)} used - ${category.percentageUsed}%`}
+                    </Text>
+                  </Card>
+                );
+              })}
+            </View>
+
+            <Text style={styles.recentLabel}>Recent Transactions</Text>
+            <View style={styles.transactionStack}>
+              {transactions.length === 0 ? (
+                <Card style={styles.transactionCard}>
+                  <View style={[styles.transactionIcon, styles.transactionIconInfo]}>
+                    <Ionicons name="receipt" color="#0B4F6C" size={20} />
+                  </View>
+                  <View style={styles.transactionCopy}>
+                    <Text style={styles.transactionTitle}>No transactions yet</Text>
+                    <Text style={styles.transactionDate}>Recent plan transactions will appear here.</Text>
+                  </View>
+                </Card>
+              ) : (
+                transactions.map((transaction) => {
+                  const isCapital = transaction.category === 'capital';
+                  const displayAmount = transaction.amount > 0 ? -transaction.amount : transaction.amount;
+                  return (
+                    <Card key={transaction.id} style={styles.transactionCard}>
+                      <View style={[styles.transactionIcon, isCapital ? styles.transactionIconError : styles.transactionIconInfo]}>
+                        <Ionicons name={isCapital ? 'receipt' : 'car'} color={isCapital ? '#E53E3E' : '#0B4F6C'} size={20} />
+                      </View>
+                      <View style={styles.transactionCopy}>
+                        <Text style={styles.transactionTitle}>{transaction.label}</Text>
+                        <Text style={styles.transactionDate}>{formatTransactionDate(transaction.serviceDate)}</Text>
+                      </View>
+                      <Text style={styles.transactionAmount}>{formatCurrency(displayAmount, currency)}</Text>
+                    </Card>
+                  );
+                })
+              )}
+            </View>
+          </>
+        ) : null}
         </View>
       </ScrollView>
     </>
@@ -223,6 +357,51 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
     fontWeight: '700',
+  },
+  statusCard: {
+    marginTop: 18,
+    minHeight: 124,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E0D6',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  statusCardWarning: {
+    borderColor: '#E53E3E',
+    backgroundColor: '#FED7D7',
+  },
+  statusTitle: {
+    color: '#1A1A2E',
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  statusBody: {
+    color: '#4A5568',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 4,
+    height: 34,
+    minWidth: 104,
+    borderRadius: 10,
+    backgroundColor: '#0B4F6C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
   },
   usageWrap: {
     alignItems: 'center',
