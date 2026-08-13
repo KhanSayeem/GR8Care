@@ -329,3 +329,79 @@ export const fundingTransactions = [
   { label: 'Speech Therapy - Aisha S.', date: '7 Jan 2025', amount: -110, tone: 'error' as const },
   { label: 'Transport assistance', date: '5 Jan 2025', amount: -42, tone: 'info' as const },
 ];
+
+export type NotificationTone = 'teal' | 'warning' | 'success' | 'purple';
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  body: string;
+  time: string;
+  category: string;
+  icon: string;
+  tone: NotificationTone;
+  unread: boolean;
+  meta: string;
+}
+
+export interface NotificationGroup {
+  label: string;
+  items: NotificationItem[];
+}
+
+export const notificationGroups: NotificationGroup[] = [
+  {
+    label: 'Today',
+    items: [
+      {
+        id: 'provider-on-the-way',
+        title: 'Provider on the way',
+        body: 'Maria Rodriguez is 12 minutes away for community access support.',
+        time: '2:48 PM',
+        category: 'Booking',
+        icon: 'navigate-circle',
+        tone: 'teal' as const,
+        unread: true,
+        meta: 'Lakemba pickup',
+      },
+      {
+        id: 'budget-alert',
+        title: 'Budget alert',
+        body: 'Capital Supports is tracking over allocation. Review before confirming more equipment costs.',
+        time: '11:20 AM',
+        category: 'Funding',
+        icon: 'warning',
+        tone: 'warning' as const,
+        unread: true,
+        meta: '$200 over',
+      },
+      {
+        id: 'booking-confirmed',
+        title: 'Booking confirmed',
+        body: 'Occupational therapy with Aisha S. is confirmed for tomorrow at 10:00 AM.',
+        time: '9:05 AM',
+        category: 'Confirmed',
+        icon: 'calendar',
+        tone: 'success' as const,
+        unread: false,
+        meta: 'Tomorrow',
+      },
+    ],
+  },
+  {
+    label: 'Yesterday',
+    items: [
+      {
+        id: 'ai-bot-suggestion',
+        title: 'AI bot suggestion',
+        body: 'Try the plan review guide before your next funding conversation.',
+        time: '4:16 PM',
+        category: 'Education',
+        icon: 'school',
+        tone: 'purple' as const,
+        unread: true,
+        meta: 'NDIS basics',
+      },
+    ],
+  },
+];
