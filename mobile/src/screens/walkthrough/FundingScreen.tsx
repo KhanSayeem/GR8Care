@@ -55,7 +55,7 @@ export function FundingScreen() {
   const totalAllocation = summary?.totals.allocation ?? 0;
   const totalUsed = summary?.totals.spentToDate ?? 0;
   const totalPercent = totalAllocation > 0 ? Math.round((totalUsed / totalAllocation) * 100) : 0;
-  const overBudgetCategory = summary?.budgetAlerts[0] ?? categories.find((category) => category.overBudget);
+  const budgetAlertCategory = summary?.budgetAlerts[0] ?? categories.find((category) => category.overBudget);
 
   const loadFunding = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (silent) {
@@ -141,7 +141,7 @@ export function FundingScreen() {
             <Text style={styles.educatorBody}>
               {summary
                 ? `You have used ${formatCurrency(totalUsed, currency)} of ${formatCurrency(totalAllocation, currency)}. ${
-                    overBudgetCategory ? `${overBudgetCategory.label} needs review before the next booking.` : 'All categories are within allocation.'
+                    budgetAlertCategory ? `${budgetAlertCategory.label} needs review before the next booking.` : 'All categories are within allocation.'
                   }`
                 : boundary || 'Your funding categories and recent plan transactions load from the GR8Care API.'}
             </Text>
@@ -176,11 +176,13 @@ export function FundingScreen() {
               </View>
             </View>
 
-            {overBudgetCategory ? (
-              <View style={styles.alertBox}>
-                <Ionicons name="warning" color="#E53E3E" size={16} />
-                <Text style={styles.alertText}>
-                  {overBudgetCategory.label} over budget by {formatCurrency(Math.abs(overBudgetCategory.remaining), currency)}
+            {budgetAlertCategory ? (
+              <View style={[styles.alertBox, budgetAlertCategory.budgetAlertLevel === 'warning' && styles.alertBoxWarningLimit]}>
+                <Ionicons name="warning" color={budgetAlertCategory.budgetAlertLevel === 'warning' ? '#E8734A' : '#E53E3E'} size={16} />
+                <Text style={[styles.alertText, budgetAlertCategory.budgetAlertLevel === 'warning' && styles.alertTextWarningLimit]}>
+                  {budgetAlertCategory.budgetAlertLevel === 'warning'
+                    ? `${budgetAlertCategory.label} has used ${budgetAlertCategory.percentageUsed}% of allocation`
+                    : `${budgetAlertCategory.label} over budget by ${formatCurrency(Math.abs(budgetAlertCategory.remaining), currency)}`}
                 </Text>
               </View>
             ) : null}
@@ -192,7 +194,7 @@ export function FundingScreen() {
                 const accent = getAccent(tone);
 
                 return (
-                  <Card key={category.category} variant={category.overBudget ? 'warning' : 'default'} style={styles.categoryCard}>
+                  <Card key={category.category} variant={category.budgetAlertLevel ? 'warning' : 'default'} style={styles.categoryCard}>
                     <View style={styles.categoryHeader}>
                       <View style={styles.categoryTitleRow}>
                         <View style={[styles.categoryDot, { backgroundColor: accent }]} />
@@ -204,9 +206,11 @@ export function FundingScreen() {
                       </View>
                     </View>
                     <ProgressBar progress={progress} tone={tone} />
-                    <Text style={[styles.usedText, category.overBudget && styles.overBudgetText]}>
+                    <Text style={[styles.usedText, category.budgetAlertLevel === 'warning' && styles.nearBudgetText, category.overBudget && styles.overBudgetText]}>
                       {category.overBudget
                         ? 'Over budget'
+                        : category.nearBudgetLimit
+                          ? `${formatCurrency(category.spentToDate, currency)} used - near limit`
                         : `${formatCurrency(category.spentToDate, currency)} used - ${category.percentageUsed}%`}
                     </Text>
                   </Card>
@@ -467,12 +471,19 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 12,
   },
+  alertBoxWarningLimit: {
+    borderColor: '#E8734A',
+    backgroundColor: '#FDE8DD',
+  },
   alertText: {
     flex: 1,
     color: '#E53E3E',
     fontSize: 13,
     lineHeight: 17,
     fontWeight: '800',
+  },
+  alertTextWarningLimit: {
+    color: '#B5532C',
   },
   categoryStack: {
     marginTop: 14,
@@ -525,6 +536,9 @@ const styles = StyleSheet.create({
   },
   overBudgetText: {
     color: '#E53E3E',
+  },
+  nearBudgetText: {
+    color: '#B5532C',
   },
   recentLabel: {
     marginTop: 18,

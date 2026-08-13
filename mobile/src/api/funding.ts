@@ -10,6 +10,8 @@ export interface FundingCategorySummary {
   remaining: number;
   percentageUsed: number;
   overBudget: boolean;
+  nearBudgetLimit: boolean;
+  budgetAlertLevel: 'warning' | 'overBudget' | null;
 }
 
 export interface FundingSummary {
@@ -23,6 +25,7 @@ export interface FundingSummary {
     spentToDate: number;
     remaining: number;
   };
+  budgetAlertThresholdPercentage: number;
   budgetAlerts: FundingCategorySummary[];
 }
 
