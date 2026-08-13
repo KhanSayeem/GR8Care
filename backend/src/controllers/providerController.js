@@ -1,5 +1,5 @@
 const { getProviderSchedule, getProviderScheduleToday, getProviderStats } = require('../services/providerDashboard');
-const { saveProviderAvailability } = require('../services/providerAvailability');
+const { getProviderAvailability, saveProviderAvailability } = require('../services/providerAvailability');
 
 async function setMyAvailability(req, res) {
   try {
@@ -11,6 +11,22 @@ async function setMyAvailability(req, res) {
         error: err.message,
         details: err.details,
       });
+    }
+
+    throw err;
+  }
+}
+
+async function getProviderAvailabilityById(req, res) {
+  try {
+    const result = await getProviderAvailability(req.params.id, {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+    });
+    res.json(result);
+  } catch (err) {
+    if ([400, 404].includes(err.status)) {
+      return res.status(err.status).json({ error: err.message });
     }
 
     throw err;
@@ -52,6 +68,7 @@ async function getMySchedule(req, res) {
 }
 
 module.exports = {
+  getProviderAvailabilityById,
   getMySchedule,
   getMyScheduleToday,
   getMyStats,
