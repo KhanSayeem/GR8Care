@@ -8,6 +8,7 @@ const User = require('../models/User');
 const BOOKING_REQUEST_BOUNDARY =
   'Booking requests remain pending until provider confirmation. Availability and conflict checks do not replace participant consent, worker assignment, or provider policy approval.';
 const BOOKING_CANCELLABLE_STATUSES = ['pending', 'confirmed'];
+const BOOKING_PROVIDER_UPDATE_STATUSES = ['confirmed', 'inProgress', 'completed', 'declined'];
 const BOOKING_WINDOWS = ['upcoming', 'past', 'all'];
 
 function badRequest(message, details) {
@@ -77,13 +78,28 @@ function availabilityBlockCovers(block, scheduledStart, scheduledEnd) {
   );
 }
 
+function getRefId(value) {
+  return value?._id ? String(value._id) : String(value);
+}
+
+function serializeUserSummary(user) {
+  if (!user || !user._id) return null;
+  return {
+    id: String(user._id),
+    displayName: user.fullName,
+    email: user.email,
+    role: user.role,
+    goals: Array.isArray(user.goals) ? user.goals : [],
+  };
+}
+
 function serializeBooking(booking) {
   return {
     id: String(booking._id),
-    participantId: String(booking.participant),
-    providerId: String(booking.provider),
-    supportWorkerId: booking.supportWorker ? String(booking.supportWorker) : null,
-    serviceRequestId: booking.serviceRequest ? String(booking.serviceRequest) : null,
+    participantId: getRefId(booking.participant),
+    providerId: getRefId(booking.provider),
+    supportWorkerId: booking.supportWorker ? getRefId(booking.supportWorker) : null,
+    serviceRequestId: booking.serviceRequest ? getRefId(booking.serviceRequest) : null,
     availabilityBlockId: booking.availabilityBlockId ? String(booking.availabilityBlockId) : null,
     service: booking.service,
     supportCategory: booking.supportCategory,
@@ -95,8 +111,19 @@ function serializeBooking(booking) {
     cancellationReason: booking.cancellationReason,
     cancelledAt: booking.cancelledAt,
     cancelledById: booking.cancelledBy ? String(booking.cancelledBy) : null,
+    completedAt: booking.completedAt,
+    completedById: booking.completedBy ? String(booking.completedBy) : null,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
+  };
+}
+
+function serializeBookingDetail(booking) {
+  return {
+    ...serializeBooking(booking),
+    participant: serializeUserSummary(booking.participant),
+    provider: serializeUserSummary(booking.provider),
+    supportWorker: serializeUserSummary(booking.supportWorker),
   };
 }
 
@@ -258,21 +285,85 @@ async function listBookings(user, filters = {}) {
   };
 }
 
-async function findAccessibleBooking(user, bookingId) {
+async function findAccessibleBooking(user, bookingId, options = {}) {
   if (!mongoose.isValidObjectId(bookingId)) {
     throw notFound('Booking not found');
   }
 
-  const booking = await Booking.findOne({
+  let query = Booking.findOne({
     _id: bookingId,
     ...getAccessQuery(user),
   });
+  if (options.populate) {
+    query = query
+      .populate('participant', 'fullName email role goals')
+      .populate('provider', 'fullName email role')
+      .populate('supportWorker', 'fullName email role');
+  }
+
+  const booking = await query;
 
   if (!booking) {
     throw notFound('Booking not found');
   }
 
   return booking;
+}
+
+async function getBookingDetail(user, bookingId) {
+  const booking = await findAccessibleBooking(user, bookingId, { populate: true });
+
+  return {
+    mode: 'bookingDetail',
+    boundary: BOOKING_REQUEST_BOUNDARY,
+    booking: serializeBookingDetail(booking),
+  };
+}
+
+function assertProviderUpdatePermission(user) {
+  if (!['provider', 'supportWorker', 'admin'].includes(user.role)) {
+    throw forbidden('Only providers, support workers, or admins can update booking status');
+  }
+}
+
+async function updateBooking(user, bookingId, payload = {}) {
+  const booking = await findAccessibleBooking(user, bookingId);
+  let changed = false;
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'notes')) {
+    booking.notes = normalizeText(payload.notes);
+    changed = true;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'status')) {
+    assertProviderUpdatePermission(user);
+    if (!BOOKING_PROVIDER_UPDATE_STATUSES.includes(payload.status)) {
+      throw badRequest('status must be one of: confirmed, inProgress, completed, declined');
+    }
+    if (booking.status === 'cancelled') {
+      throw conflict('Cancelled bookings cannot be updated');
+    }
+
+    booking.status = payload.status;
+    if (payload.status === 'completed') {
+      booking.completedAt = new Date();
+      booking.completedBy = user._id;
+    }
+    changed = true;
+  }
+
+  if (!changed) {
+    throw badRequest('notes or status is required');
+  }
+
+  await booking.save();
+  const populated = await findAccessibleBooking(user, booking._id, { populate: true });
+
+  return {
+    mode: 'bookingUpdated',
+    boundary: BOOKING_REQUEST_BOUNDARY,
+    booking: serializeBookingDetail(populated),
+  };
 }
 
 async function cancelBooking(user, bookingId, payload = {}) {
@@ -307,6 +398,9 @@ module.exports = {
   BOOKING_REQUEST_BOUNDARY,
   cancelBooking,
   createBooking,
+  getBookingDetail,
   listBookings,
   serializeBooking,
+  serializeBookingDetail,
+  updateBooking,
 };

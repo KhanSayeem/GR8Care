@@ -346,4 +346,155 @@ describe('booking creation API', () => {
     expect(notCancellable.status).toBe(409);
     expect(notCancellable.body.error).toBe('Only pending or confirmed bookings can be cancelled');
   });
+
+  it('returns booking detail with participant and provider summaries', async () => {
+    const participant = await registerUser('participant', 'participant.detail.booking@example.com');
+    const provider = await registerUser('provider', 'provider.detail.booking@example.com');
+    await User.findByIdAndUpdate(participant.user._id, {
+      goals: ['Build confidence with community access'],
+    });
+    const booking = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Community access',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+      notes: 'Initial notes',
+    });
+
+    const res = await request(app)
+      .get(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${provider.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.mode).toBe('bookingDetail');
+    expect(res.body.booking).toEqual(
+      expect.objectContaining({
+        id: String(booking._id),
+        participantId: participant.user._id,
+        providerId: provider.user._id,
+        status: 'confirmed',
+        notes: 'Initial notes',
+        participant: expect.objectContaining({
+          displayName: 'participant user',
+          goals: ['Build confidence with community access'],
+        }),
+        provider: expect.objectContaining({
+          displayName: 'provider user',
+        }),
+      })
+    );
+  });
+
+  it('updates provider-owned booking status and session notes', async () => {
+    const participant = await registerUser('participant', 'participant.patch.booking@example.com');
+    const provider = await registerUser('provider', 'provider.patch.booking@example.com');
+    const booking = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Community access',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+
+    const res = await request(app)
+      .patch(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({
+        status: 'completed',
+        notes: 'Session complete. Participant practised transport planning.',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.mode).toBe('bookingUpdated');
+    expect(res.body.booking).toEqual(
+      expect.objectContaining({
+        id: String(booking._id),
+        status: 'completed',
+        notes: 'Session complete. Participant practised transport planning.',
+        completedById: provider.user._id,
+      })
+    );
+    expect(res.body.booking.completedAt).toBeTruthy();
+
+    const stored = await Booking.findById(booking._id);
+    expect(stored.status).toBe('completed');
+    expect(stored.completedAt).toBeTruthy();
+  });
+
+  it('allows participants to update notes but not booking status', async () => {
+    const participant = await registerUser('participant', 'participant.patch.notes.booking@example.com');
+    const provider = await registerUser('provider', 'provider.patch.notes.booking@example.com');
+    const booking = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Community access',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+
+    const notesRes = await request(app)
+      .patch(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${participant.token}`)
+      .send({ notes: 'Please call before arrival.' });
+    const statusRes = await request(app)
+      .patch(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${participant.token}`)
+      .send({ status: 'completed' });
+
+    expect(notesRes.status).toBe(200);
+    expect(notesRes.body.booking.notes).toBe('Please call before arrival.');
+    expect(statusRes.status).toBe(403);
+    expect(statusRes.body.error).toBe('Only providers, support workers, or admins can update booking status');
+  });
+
+  it('validates booking detail update inputs and access', async () => {
+    const participant = await registerUser('participant', 'participant.invalid.patch.booking@example.com');
+    const otherParticipant = await registerUser('participant', 'participant.other.invalid.patch.booking@example.com');
+    const provider = await registerUser('provider', 'provider.invalid.patch.booking@example.com');
+    const booking = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Community access',
+      scheduledStart: new Date('2026-08-19T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-19T10:00:00.000Z'),
+      status: 'confirmed',
+    });
+    const cancelled = await Booking.create({
+      participant: participant.user._id,
+      provider: provider.user._id,
+      service: 'Community access',
+      scheduledStart: new Date('2026-08-20T09:00:00.000Z'),
+      scheduledEnd: new Date('2026-08-20T10:00:00.000Z'),
+      status: 'cancelled',
+    });
+
+    const inaccessible = await request(app)
+      .get(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${otherParticipant.token}`);
+    const noFields = await request(app)
+      .patch(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ location: 'Unsupported update' });
+    const badStatus = await request(app)
+      .patch(`/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ status: 'cancelled' });
+    const cancelledUpdate = await request(app)
+      .patch(`/bookings/${cancelled._id}`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ status: 'completed' });
+
+    expect(inaccessible.status).toBe(404);
+    expect(inaccessible.body.error).toBe('Booking not found');
+    expect(noFields.status).toBe(400);
+    expect(noFields.body.error).toBe('notes or status is required');
+    expect(badStatus.status).toBe(400);
+    expect(badStatus.body.error).toBe('status must be one of: confirmed, inProgress, completed, declined');
+    expect(cancelledUpdate.status).toBe(409);
+    expect(cancelledUpdate.body.error).toBe('Cancelled bookings cannot be updated');
+  });
 });

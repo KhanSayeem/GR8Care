@@ -52,6 +52,12 @@ const bookingSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    completedAt: { type: Date, default: null },
+    completedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     metadata: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   },
   { timestamps: true }
