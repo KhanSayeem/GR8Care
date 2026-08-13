@@ -9,7 +9,7 @@ let mongod;
 jest.setTimeout(120000);
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: 30000 } });
   await mongoose.connect(mongod.getUri());
 });
 

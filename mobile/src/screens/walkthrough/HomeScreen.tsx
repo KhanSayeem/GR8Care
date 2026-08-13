@@ -1,6 +1,7 @@
-import React from 'react';
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ProviderScheduleBlock, ProviderStats, getProviderScheduleToday, getProviderStats } from '../../api/providerDashboard';
 import { Badge, Card, ProgressBar } from '../../components';
 import { careSummary, fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
 
@@ -100,6 +101,14 @@ function QuickActionCard({
   );
 }
 
+function formatDashboardCurrency(value: number) {
+  return value.toLocaleString('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0,
+  });
+}
+
 export function HomeScreen({
   roleLabel,
   providerSection = 'dashboard',
@@ -107,8 +116,17 @@ export function HomeScreen({
   onOpenAvailability,
   onOpenNotifications,
 }: HomeScreenProps) {
+  const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
+  const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
+  const [providerDashboardBoundary, setProviderDashboardBoundary] = useState('');
+  const [providerScheduleDay, setProviderScheduleDay] = useState('');
+  const [providerLoading, setProviderLoading] = useState(false);
+  const [providerRefreshing, setProviderRefreshing] = useState(false);
+  const [providerError, setProviderError] = useState<string | null>(null);
+
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
   const isSupportWorkerDashboard = roleLabel === 'Support Worker' && providerSection === 'dashboard';
+  const isProviderDashboard = isProviderShell && providerSection === 'dashboard';
   const heroTitle = isProviderShell
     ? isSupportWorkerDashboard
       ? 'Support Worker home'
@@ -123,6 +141,43 @@ export function HomeScreen({
       ? 'Ask S-TRAH AI, shift notes, wellness, education, and templates for daily practice.'
       : providerSectionCopy[providerSection].description
     : 'Browse NDIS education in plain-language categories';
+
+  const loadProviderDashboard = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!isProviderDashboard) return;
+
+    if (silent) {
+      setProviderRefreshing(true);
+    } else {
+      setProviderLoading(true);
+    }
+    setProviderError(null);
+
+    try {
+      const [statsResult, scheduleResult] = await Promise.all([getProviderStats(), getProviderScheduleToday()]);
+      setProviderStats(statsResult.stats);
+      setProviderSchedule(scheduleResult.schedule);
+      setProviderDashboardBoundary(statsResult.boundary || scheduleResult.boundary);
+      setProviderScheduleDay(scheduleResult.day);
+    } catch (err) {
+      setProviderError(err instanceof Error ? err.message : 'Provider dashboard could not be loaded.');
+    } finally {
+      setProviderLoading(false);
+      setProviderRefreshing(false);
+    }
+  }, [isProviderDashboard]);
+
+  useEffect(() => {
+    loadProviderDashboard();
+  }, [loadProviderDashboard]);
+
+  const providerMetricCards = providerStats
+    ? [
+        { label: 'Today', value: `${providerStats.sessionsToday}`, detail: 'sessions' },
+        { label: 'Week', value: `${providerStats.sessionsThisWeek}`, detail: 'sessions' },
+        { label: 'Earnings', value: formatDashboardCurrency(providerStats.earningsThisWeek), detail: 'this week' },
+        { label: 'Rating', value: providerStats.rating === null ? 'New' : providerStats.rating.toFixed(1), detail: 'average' },
+      ]
+    : [];
 
   return (
     <>
@@ -151,17 +206,105 @@ export function HomeScreen({
               <Text style={styles.rolePillText}>{roleLabel}</Text>
             </View>
             <View style={styles.zonePill}>
-              <Ionicons name={isProviderShell ? 'school' : 'location'} color="#0B4F6C" size={12} />
-              <Text style={styles.zonePillText}>{isSupportWorkerDashboard ? 'MVP tools' : isProviderShell ? 'Education hub' : 'Parramatta LGA Zone'}</Text>
+              <Ionicons name={isProviderDashboard && providerStats?.verified ? 'checkmark-circle' : isProviderShell ? 'school' : 'location'} color="#0B4F6C" size={12} />
+              <Text style={styles.zonePillText}>
+                {isProviderDashboard && providerStats
+                  ? providerStats.verified
+                    ? 'Verified provider'
+                    : 'Verification pending'
+                  : isSupportWorkerDashboard
+                    ? 'MVP tools'
+                    : isProviderShell
+                      ? 'Education hub'
+                      : 'Parramatta LGA Zone'}
+              </Text>
             </View>
+            {isProviderDashboard && providerStats ? (
+              <View style={styles.tierPill}>
+                <Text style={styles.tierPillText}>{providerStats.subscriptionTier}</Text>
+              </View>
+            ) : null}
           </View>
           <View style={styles.educationStrip}>
             <Ionicons name="book" color="#0B4F6C" size={14} />
-            <Text style={styles.educationStripText}>{educationStripText}</Text>
+            <Text style={styles.educationStripText}>{isProviderDashboard && providerDashboardBoundary ? providerDashboardBoundary : educationStripText}</Text>
           </View>
         </View>
 
         <View style={styles.content}>
+          {isProviderDashboard ? (
+            <Card style={styles.providerDashboardCard}>
+              {providerLoading ? (
+                <View style={styles.providerStateWrap}>
+                  <ActivityIndicator color="#0B4F6C" />
+                  <Text style={styles.providerStateTitle}>Loading provider dashboard</Text>
+                  <Text style={styles.providerStateText}>Fetching stats and today's schedule from the GR8Care API.</Text>
+                </View>
+              ) : providerError ? (
+                <View style={styles.providerStateWrap}>
+                  <Ionicons name="alert-circle" color="#E53E3E" size={22} />
+                  <Text style={styles.providerStateTitle}>Dashboard unavailable</Text>
+                  <Text style={styles.providerStateText}>{providerError}</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={providerRefreshing}
+                    onPress={() => loadProviderDashboard({ silent: true })}
+                    style={styles.providerRetryButton}
+                  >
+                    {providerRefreshing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.providerRetryText}>Retry</Text>}
+                  </Pressable>
+                </View>
+              ) : providerStats ? (
+                <>
+                  <View style={styles.dashboardHeader}>
+                    <View>
+                      <Text style={styles.sectionLabel}>Provider dashboard</Text>
+                      <Text style={styles.dashboardName}>{providerStats.displayName}</Text>
+                    </View>
+                    <Badge label={providerStats.verified ? 'Verified' : 'Pending'} tone={providerStats.verified ? 'success' : 'warning'} />
+                  </View>
+
+                  <View style={styles.metricGrid}>
+                    {providerMetricCards.map((metric) => (
+                      <View key={metric.label} style={styles.metricCard}>
+                        <Text style={styles.metricLabel}>{metric.label}</Text>
+                        <Text style={styles.metricValue}>{metric.value}</Text>
+                        <Text style={styles.metricDetail}>{metric.detail}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.scheduleHeader}>
+                    <Text style={styles.sectionLabel}>Today's schedule{providerScheduleDay ? ` - ${providerScheduleDay}` : ''}</Text>
+                    <Text style={styles.metricDetail}>{providerStats.activeAvailabilityBlocks} active blocks</Text>
+                  </View>
+                  <View style={styles.scheduleStack}>
+                    {providerSchedule.length === 0 ? (
+                      <View style={styles.scheduleEmpty}>
+                        <Ionicons name="calendar" color="#0B4F6C" size={18} />
+                        <Text style={styles.providerStateText}>No enabled availability blocks for today.</Text>
+                      </View>
+                    ) : (
+                      providerSchedule.map((block) => (
+                        <View key={block.id} style={styles.scheduleRow}>
+                          <View style={styles.scheduleTimePill}>
+                            <Text style={styles.scheduleTimeText}>{block.start}</Text>
+                            <Text style={styles.scheduleTimeText}>{block.end}</Text>
+                          </View>
+                          <View style={styles.bookingCopy}>
+                            <Text style={styles.taskText}>{block.service}</Text>
+                            <Text style={styles.bookingService}>Available for matching</Text>
+                          </View>
+                          <Badge label="Open" tone="success" />
+                        </View>
+                      ))
+                    )}
+                  </View>
+                </>
+              ) : null}
+            </Card>
+          ) : null}
+
           {isSupportWorkerDashboard ? (
             <Pressable accessibilityRole="button" onPress={onOpenEducation} style={styles.primaryActionPressable}>
               <Card style={styles.primaryActionCard}>
@@ -385,6 +528,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  tierPill: {
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#FFF1EA',
+  },
+  tierPillText: {
+    color: '#B5532C',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
   educationStrip: {
     marginTop: 10,
     flexDirection: 'row',
@@ -419,6 +574,131 @@ const styles = StyleSheet.create({
   quickCard: {
     flex: 1,
     minHeight: 102,
+  },
+  providerDashboardCard: {
+    gap: 14,
+  },
+  providerStateWrap: {
+    minHeight: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  providerStateTitle: {
+    color: '#1A1A2E',
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  providerStateText: {
+    color: '#4A5568',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  providerRetryButton: {
+    marginTop: 4,
+    height: 34,
+    minWidth: 104,
+    borderRadius: 10,
+    backgroundColor: '#0B4F6C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  providerRetryText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+  },
+  dashboardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  dashboardName: {
+    marginTop: 4,
+    color: '#1A1A2E',
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: '800',
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metricCard: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    minHeight: 74,
+    borderRadius: 10,
+    backgroundColor: '#F7F3EE',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  metricLabel: {
+    color: '#4A5568',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+  },
+  metricValue: {
+    marginTop: 2,
+    color: '#1A1A2E',
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '800',
+  },
+  metricDetail: {
+    marginTop: 1,
+    color: '#A0AEC0',
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  scheduleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  scheduleStack: {
+    gap: 10,
+  },
+  scheduleEmpty: {
+    minHeight: 58,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D0EAF2',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 12,
+  },
+  scheduleRow: {
+    minHeight: 64,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+  },
+  scheduleTimePill: {
+    width: 54,
+    borderRadius: 9,
+    backgroundColor: '#D0EAF2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  scheduleTimeText: {
+    color: '#0B4F6C',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '800',
   },
   primaryActionPressable: {
     width: '100%',

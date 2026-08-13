@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+const DEFAULT_API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = useAuthStore.getState().token;
