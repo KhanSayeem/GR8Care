@@ -10,6 +10,7 @@ interface HomeScreenProps {
   roleLabel: string;
   providerSection?: ProviderSection;
   onOpenEducation?: () => void;
+  onOpenNotifications?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -95,7 +96,7 @@ function QuickActionCard({
   );
 }
 
-export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation }: HomeScreenProps) {
+export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEducation, onOpenNotifications }: HomeScreenProps) {
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
   const isSupportWorkerDashboard = roleLabel === 'Support Worker' && providerSection === 'dashboard';
   const heroTitle = isProviderShell
@@ -124,10 +125,16 @@ export function HomeScreen({ roleLabel, providerSection = 'dashboard', onOpenEdu
               <Text style={styles.greeting}>Good morning</Text>
               <Text style={styles.participantName}>{heroTitle}</Text>
             </View>
-            <View style={styles.bellButton}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open notifications"
+              disabled={!onOpenNotifications}
+              onPress={onOpenNotifications}
+              style={styles.bellButton}
+            >
               <Ionicons name="notifications" color="#FFFFFF" size={20} />
               <View style={styles.notificationDot} />
-            </View>
+            </Pressable>
           </View>
           <View style={styles.heroPills}>
             <View style={styles.rolePill}>

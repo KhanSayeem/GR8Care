@@ -6,10 +6,11 @@ import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryS
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
+import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account';
+type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications';
 
 const tabs: Array<{
   key: TabKey;
@@ -44,11 +45,19 @@ export function ParticipantTabs() {
         return <EducationLibraryScreen />;
       case 'funding':
         return <FundingScreen />;
+      case 'notifications':
+        return <NotificationsScreen />;
       case 'account':
         return <ProfileScreen />;
       case 'home':
       default:
-        return <HomeScreen roleLabel="Participant" onOpenEducation={() => setActiveTab('learn')} />;
+        return (
+          <HomeScreen
+            roleLabel="Participant"
+            onOpenEducation={() => setActiveTab('learn')}
+            onOpenNotifications={() => setActiveTab('notifications')}
+          />
+        );
     }
   }, [activeTab]);
 
