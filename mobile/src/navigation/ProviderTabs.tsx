@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuthStore } from '../store/authStore';
+import { DocumentTemplatesScreen } from '../screens/walkthrough/DocumentTemplatesScreen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
@@ -54,9 +55,7 @@ export function ProviderTabs() {
         {({ navigation }) => <SetAvailabilityScreen onBack={() => navigation.navigate('Dashboard')} />}
       </Tab.Screen>
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
-      <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
-        {() => <HomeScreen roleLabel={roleLabel} providerSection="templates" />}
-      </Tab.Screen>
+      <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
       <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
       <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={ProfileScreen} />
     </Tab.Navigator>
