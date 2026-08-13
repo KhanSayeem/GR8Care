@@ -144,6 +144,137 @@ describe('provider availability API', () => {
     );
   });
 
+  it('returns open availability slots for a provider date range', async () => {
+    const providerRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Provider Slots',
+      email: 'provider.slots@example.com',
+      password: 'supersecret',
+      role: 'provider',
+    });
+    const participantRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Participant Slots',
+      email: 'participant.slots@example.com',
+      password: 'supersecret',
+      role: 'participant',
+    });
+
+    await ProviderAvailability.create({
+      provider: providerRegistration.body.user._id,
+      blocks: [
+        { day: 'Monday', start: '12:00', end: '14:00', service: 'Afternoon support', enabled: true },
+        { day: 'Monday', start: '08:00', end: '10:00', service: 'Morning support', enabled: true },
+        { day: 'Monday', start: '15:00', end: '16:00', service: 'Disabled support', enabled: false },
+        { day: 'Tuesday', start: '09:00', end: '11:00', service: 'Transport support', enabled: true },
+      ],
+    });
+
+    const res = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?startDate=2026-08-17&endDate=2026-08-18`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.mode).toBe('providerAvailabilitySlots');
+    expect(res.body.boundary).toBe(PROVIDER_AVAILABILITY_BOUNDARY);
+    expect(res.body.provider).toEqual(
+      expect.objectContaining({
+        id: providerRegistration.body.user._id,
+        displayName: 'Provider Slots',
+      })
+    );
+    expect(res.body.startDate).toBe('2026-08-17');
+    expect(res.body.endDate).toBe('2026-08-18');
+    expect(res.body.days).toEqual([
+      expect.objectContaining({
+        date: '2026-08-17',
+        day: 'Monday',
+        openSlots: [
+          expect.objectContaining({ start: '08:00', service: 'Morning support', status: 'available' }),
+          expect.objectContaining({ start: '12:00', service: 'Afternoon support', status: 'available' }),
+        ],
+      }),
+      expect.objectContaining({
+        date: '2026-08-18',
+        day: 'Tuesday',
+        openSlots: [expect.objectContaining({ start: '09:00', service: 'Transport support' })],
+      }),
+    ]);
+  });
+
+  it('returns empty days for providers without availability records', async () => {
+    const providerRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Provider No Slots',
+      email: 'provider.no.slots@example.com',
+      password: 'supersecret',
+      role: 'supportWorker',
+    });
+    const participantRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Participant No Slots',
+      email: 'participant.no.slots@example.com',
+      password: 'supersecret',
+      role: 'participant',
+    });
+
+    const res = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?startDate=2026-08-17&endDate=2026-08-17`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.days).toEqual([
+      expect.objectContaining({
+        date: '2026-08-17',
+        day: 'Monday',
+        openSlots: [],
+      }),
+    ]);
+  });
+
+  it('validates provider availability lookup inputs', async () => {
+    const participantRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Participant Lookup Invalid',
+      email: 'participant.lookup.invalid@example.com',
+      password: 'supersecret',
+      role: 'participant',
+    });
+    const providerRegistration = await request(app).post('/auth/register').send({
+      fullName: 'Provider Lookup Invalid',
+      email: 'provider.lookup.invalid@example.com',
+      password: 'supersecret',
+      role: 'provider',
+    });
+
+    const missingStart = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?endDate=2026-08-17`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+    const reversedRange = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?startDate=2026-08-18&endDate=2026-08-17`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+    const tooLarge = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?startDate=2026-08-01&endDate=2026-09-15`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+    const nonProvider = await request(app)
+      .get(`/providers/${participantRegistration.body.user._id}/availability?startDate=2026-08-17&endDate=2026-08-17`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+    const invalidProviderId = await request(app)
+      .get('/providers/not-a-provider-id/availability?startDate=2026-08-17&endDate=2026-08-17')
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+    const invalidCalendarDate = await request(app)
+      .get(`/providers/${providerRegistration.body.user._id}/availability?startDate=2026-02-30&endDate=2026-03-01`)
+      .set('Authorization', `Bearer ${participantRegistration.body.token}`);
+
+    expect(missingStart.status).toBe(400);
+    expect(missingStart.body.error).toBe('startDate is required');
+    expect(reversedRange.status).toBe(400);
+    expect(reversedRange.body.error).toBe('endDate must be on or after startDate');
+    expect(tooLarge.status).toBe(400);
+    expect(tooLarge.body.error).toBe('date range cannot exceed 31 days');
+    expect(nonProvider.status).toBe(404);
+    expect(nonProvider.body.error).toBe('Provider not found');
+    expect(invalidProviderId.status).toBe(404);
+    expect(invalidProviderId.body.error).toBe('Provider not found');
+    expect(invalidCalendarDate.status).toBe(400);
+    expect(invalidCalendarDate.body.error).toBe('startDate must use YYYY-MM-DD');
+  });
+
   it('rejects participant access and invalid availability payloads', async () => {
     const registration = await request(app).post('/auth/register').send({
       fullName: 'Participant One',
