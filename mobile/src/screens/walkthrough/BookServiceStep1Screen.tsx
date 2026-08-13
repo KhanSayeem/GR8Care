@@ -7,6 +7,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface BookServiceStep1ScreenProps {
   onBack: () => void;
+  onContinue?: () => void;
 }
 
 const SERVICE_OPTIONS: Array<{
@@ -98,7 +99,7 @@ function SelectCard({
   );
 }
 
-export function BookServiceStep1Screen({ onBack }: BookServiceStep1ScreenProps) {
+export function BookServiceStep1Screen({ onBack, onContinue }: BookServiceStep1ScreenProps) {
   const [serviceId, setServiceId] = useState(SERVICE_OPTIONS[0].id);
   const [assignmentMethod, setAssignmentMethod] = useState<'auto' | 'manual'>('auto');
   const [sessionType, setSessionType] = useState<'inPerson' | 'remote'>('inPerson');
@@ -203,8 +204,14 @@ export function BookServiceStep1Screen({ onBack }: BookServiceStep1ScreenProps) 
           <View className="mt-5 gap-3">
             <Button label="Speak your request instead" variant="secondary" />
             <Button
-              label={saved ? 'Service preferences saved' : 'Next: Choose Date & Time'}
-              onPress={() => setSaved(true)}
+              label={saved ? 'Next: Choose Date & Time' : 'Save service preferences'}
+              onPress={() => {
+                if (saved) {
+                  onContinue?.();
+                  return;
+                }
+                setSaved(true);
+              }}
             />
           </View>
 
