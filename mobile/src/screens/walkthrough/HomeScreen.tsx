@@ -13,11 +13,12 @@ interface HomeScreenProps {
   onOpenEducation?: () => void;
   onOpenAvailability?: () => void;
   onOpenNotifications?: () => void;
+  onOpenBooking?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
 
-const participantQuickActions: Array<{
+interface QuickAction {
   title: string;
   subtitle: string;
   icon: IoniconName;
@@ -25,22 +26,17 @@ const participantQuickActions: Array<{
   bg: string;
   educationShortcut?: boolean;
   availabilityShortcut?: boolean;
-}> = [
+  bookingShortcut?: boolean;
+}
+
+const participantQuickActions: QuickAction[] = [
   { title: 'Education Library', subtitle: 'Browse categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Find Provider', subtitle: '40+ nearby', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF' },
-  { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA' },
+  { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA', bookingShortcut: true },
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
 ];
 
-const providerQuickActions: Array<{
-  title: string;
-  subtitle: string;
-  icon: IoniconName;
-  color: string;
-  bg: string;
-  educationShortcut?: boolean;
-  availabilityShortcut?: boolean;
-}> = [
+const providerQuickActions: QuickAction[] = [
   { title: 'Set Availability', subtitle: 'Time blocks', icon: 'calendar', color: '#0B4F6C', bg: '#D0EAF2', availabilityShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
@@ -48,7 +44,7 @@ const providerQuickActions: Array<{
   { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
 
-const supportWorkerQuickActions: Array<(typeof providerQuickActions)[number]> = [
+const supportWorkerQuickActions: QuickAction[] = [
   { title: 'Shift Note AI', subtitle: 'Capture and review', icon: 'mic', color: '#0B4F6C', bg: '#D0EAF2' },
   { title: 'Wellness', subtitle: 'Simple reset', icon: 'heart', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'NDIS Education Library', subtitle: 'Plain-language guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
@@ -87,7 +83,7 @@ function QuickActionCard({
   color,
   bg,
   onPress,
-}: (typeof participantQuickActions)[number] & { onPress?: () => void }) {
+}: QuickAction & { onPress?: () => void }) {
   return (
     <Pressable accessibilityRole="button" disabled={!onPress} onPress={onPress} style={styles.quickPressable}>
       <Card style={styles.quickCard}>
@@ -115,6 +111,7 @@ export function HomeScreen({
   onOpenEducation,
   onOpenAvailability,
   onOpenNotifications,
+  onOpenBooking,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -327,7 +324,7 @@ export function HomeScreen({
               <QuickActionCard
                 key={action.title}
                 {...action}
-                onPress={action.educationShortcut ? onOpenEducation : action.availabilityShortcut ? onOpenAvailability : undefined}
+                onPress={action.educationShortcut ? onOpenEducation : action.availabilityShortcut ? onOpenAvailability : action.bookingShortcut ? onOpenBooking : undefined}
               />
             ))}
           </View>
