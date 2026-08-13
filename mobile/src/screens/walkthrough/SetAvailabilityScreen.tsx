@@ -19,7 +19,11 @@ function createBlock(day: string, index: number): AvailabilityBlock {
   };
 }
 
-export function SetAvailabilityScreen() {
+interface SetAvailabilityScreenProps {
+  onBack?: () => void;
+}
+
+export function SetAvailabilityScreen({ onBack }: SetAvailabilityScreenProps) {
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>(providerAvailabilityBlocks);
   const [selectedDay, setSelectedDay] = useState(providerAvailabilityBlocks[0]?.day ?? 'Monday');
   const [saved, setSaved] = useState(false);
@@ -52,6 +56,8 @@ export function SetAvailabilityScreen() {
       title="Set availability"
       subtitle="Choose the days and time blocks participants can request before your team confirms a booking."
     >
+      {onBack ? <Button label="Back to home" variant="outline" onPress={onBack} /> : null}
+
       <Card variant="highlight">
         <View className="flex-row flex-wrap items-start justify-between gap-3">
           <View className="flex-1">

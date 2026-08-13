@@ -48,9 +48,11 @@ export function ProviderTabs() {
         options={{
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
         }}
-        component={SetAvailabilityScreen}
-      />
+      >
+        {({ navigation }) => <SetAvailabilityScreen onBack={() => navigation.navigate('Dashboard')} />}
+      </Tab.Screen>
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }}>
         {() => <HomeScreen roleLabel={roleLabel} providerSection="templates" />}
