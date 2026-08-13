@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
+const { BOOKING_STATUSES } = require('../models/Booking');
 const ProviderAvailability = require('../models/ProviderAvailability');
 const ServiceRequest = require('../models/ServiceRequest');
 const User = require('../models/User');
 
 const BOOKING_REQUEST_BOUNDARY =
   'Booking requests remain pending until provider confirmation. Availability and conflict checks do not replace participant consent, worker assignment, or provider policy approval.';
+const BOOKING_CANCELLABLE_STATUSES = ['pending', 'confirmed'];
+const BOOKING_WINDOWS = ['upcoming', 'past', 'all'];
 
 function badRequest(message, details) {
   const error = new Error(message);
@@ -89,6 +92,9 @@ function serializeBooking(booking) {
     status: booking.status,
     location: booking.location,
     notes: booking.notes,
+    cancellationReason: booking.cancellationReason,
+    cancelledAt: booking.cancelledAt,
+    cancelledById: booking.cancelledBy ? String(booking.cancelledBy) : null,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
   };
@@ -194,8 +200,113 @@ async function createBooking(requester, payload = {}) {
   };
 }
 
+function getAccessQuery(user) {
+  if (user.role === 'admin') return {};
+  if (['participant', 'caregiver'].includes(user.role)) return { participant: user._id };
+  if (user.role === 'provider') return { provider: user._id };
+  if (user.role === 'supportWorker') {
+    return {
+      $or: [{ provider: user._id }, { supportWorker: user._id }],
+    };
+  }
+
+  return { _id: null };
+}
+
+function parseBookingWindow(value = 'upcoming') {
+  if (!BOOKING_WINDOWS.includes(value)) {
+    throw badRequest('window must be one of: upcoming, past, all');
+  }
+  return value;
+}
+
+function buildBookingListQuery(user, filters = {}) {
+  const window = parseBookingWindow(filters.window);
+  const query = { ...getAccessQuery(user) };
+  const asOf = filters.asOf ? parseDateTime(filters.asOf, 'asOf') : new Date();
+
+  if (filters.status) {
+    if (!BOOKING_STATUSES.includes(filters.status)) {
+      throw badRequest('status is not supported');
+    }
+    query.status = filters.status;
+  }
+
+  if (window === 'upcoming') {
+    query.scheduledEnd = { $gte: asOf };
+  } else if (window === 'past') {
+    query.scheduledEnd = { $lt: asOf };
+  }
+
+  return { query, window, asOf };
+}
+
+async function listBookings(user, filters = {}) {
+  const { query, window, asOf } = buildBookingListQuery(user, filters);
+  const sort = window === 'past' ? { scheduledStart: -1 } : { scheduledStart: 1 };
+  const bookings = await Booking.find(query).sort(sort).limit(100);
+
+  return {
+    mode: 'bookings',
+    boundary: BOOKING_REQUEST_BOUNDARY,
+    filter: {
+      window,
+      status: filters.status || null,
+      asOf,
+    },
+    bookings: bookings.map(serializeBooking),
+  };
+}
+
+async function findAccessibleBooking(user, bookingId) {
+  if (!mongoose.isValidObjectId(bookingId)) {
+    throw notFound('Booking not found');
+  }
+
+  const booking = await Booking.findOne({
+    _id: bookingId,
+    ...getAccessQuery(user),
+  });
+
+  if (!booking) {
+    throw notFound('Booking not found');
+  }
+
+  return booking;
+}
+
+async function cancelBooking(user, bookingId, payload = {}) {
+  const booking = await findAccessibleBooking(user, bookingId);
+
+  if (booking.status === 'cancelled') {
+    return {
+      mode: 'bookingCancelled',
+      boundary: BOOKING_REQUEST_BOUNDARY,
+      booking: serializeBooking(booking),
+    };
+  }
+
+  if (!BOOKING_CANCELLABLE_STATUSES.includes(booking.status)) {
+    throw conflict('Only pending or confirmed bookings can be cancelled');
+  }
+
+  booking.status = 'cancelled';
+  booking.cancellationReason = normalizeText(payload.reason || payload.cancellationReason);
+  booking.cancelledAt = new Date();
+  booking.cancelledBy = user._id;
+  await booking.save();
+
+  return {
+    mode: 'bookingCancelled',
+    boundary: BOOKING_REQUEST_BOUNDARY,
+    booking: serializeBooking(booking),
+  };
+}
+
 module.exports = {
   BOOKING_REQUEST_BOUNDARY,
+  cancelBooking,
   createBooking,
+  listBookings,
   serializeBooking,
 };
