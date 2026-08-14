@@ -285,4 +285,32 @@ describe('instant requests API', () => {
     expect(liveRes.body.requests.map((r) => r.id)).not.toContain(String(expired._id));
     expect(pastRes.body.requests.map((r) => r.id)).toContain(String(expired._id));
   });
+
+  it('sweeps an untouched expired request into the past window without a prior live/accept lookup', async () => {
+    const participant = await registerUser('participant', 'participant.untouched.instant@example.com');
+    const provider = await registerUser('provider', 'provider.untouched.instant@example.com');
+
+    const expired = await ServiceRequest.create({
+      participant: participant.user._id,
+      requestedBy: participant.user._id,
+      preferredProvider: provider.user._id,
+      title: 'Never responded to',
+      service: 'Community access',
+      preferredStartDate: new Date('2026-08-18T09:00:00.000Z'),
+      preferredEndDate: new Date('2026-08-18T12:00:00.000Z'),
+      status: 'submitted',
+      expiresAt: new Date(Date.now() - 60000),
+    });
+
+    const pastRes = await request(app)
+      .get('/requests?window=past')
+      .set('Authorization', `Bearer ${provider.token}`);
+
+    expect(pastRes.body.requests.map((r) => r.id)).toContain(String(expired._id));
+    const found = pastRes.body.requests.find((r) => r.id === String(expired._id));
+    expect(found.status).toBe('expired');
+
+    const stored = await ServiceRequest.findById(expired._id);
+    expect(stored.status).toBe('expired');
+  });
 });

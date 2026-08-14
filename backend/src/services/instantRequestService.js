@@ -196,7 +196,10 @@ async function listInstantRequests(user, filters = {}) {
     query.status = 'submitted';
     query.expiresAt = { $gt: asOf };
   } else if (window === 'past') {
-    query.status = { $in: INSTANT_REQUEST_PAST_STATUSES };
+    query.$or = [
+      { status: { $in: INSTANT_REQUEST_PAST_STATUSES } },
+      { status: 'submitted', expiresAt: { $lte: asOf } },
+    ];
   }
 
   let requests = await ServiceRequest.find(query)
