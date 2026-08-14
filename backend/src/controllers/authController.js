@@ -2,6 +2,13 @@ const User = require('../models/User');
 const { ROLES } = require('../models/User');
 const { signToken } = require('../utils/jwt');
 
+// Roles a stranger is allowed to grant themselves at signup. `admin` is
+// deliberately excluded: registration previously accepted any value in ROLES,
+// so anyone could POST role:"admin" and immediately read the whole user
+// directory through the admin endpoints. Admins are seeded out of band
+// instead - see backend/scripts/create-admin.js.
+const SELF_SERVICE_ROLES = ROLES.filter((role) => role !== 'admin');
+
 async function register(req, res, next) {
   try {
     const { fullName, email, password, role = 'participant', language = 'en', ndisNumber, subscriptionTier } = req.body;
@@ -12,7 +19,7 @@ async function register(req, res, next) {
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
-    if (!ROLES.includes(role)) {
+    if (!SELF_SERVICE_ROLES.includes(role)) {
       return res.status(400).json({ error: 'Unsupported role' });
     }
 

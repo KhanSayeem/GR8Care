@@ -266,7 +266,19 @@ describe('GET /providers', () => {
 
   it('returns null compatibility scores for a non-participant requester', async () => {
     await seedMatchingScenario();
-    const admin = await registerUser('admin', 'admin.match@example.com');
+    // Seeded directly rather than via /auth/register, which rejects the admin
+    // role so nobody can grant it to themselves.
+    await User.create({
+      fullName: 'admin user',
+      email: 'admin.match@example.com',
+      password: 'supersecret',
+      role: 'admin',
+      language: 'en',
+    });
+    const login = await request(app)
+      .post('/auth/login')
+      .send({ email: 'admin.match@example.com', password: 'supersecret' });
+    const admin = login.body;
 
     const res = await request(app)
       .get('/providers')
