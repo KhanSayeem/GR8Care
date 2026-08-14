@@ -17,6 +17,7 @@ interface HomeScreenProps {
   onOpenBookings?: () => void;
   onOpenSchedule?: () => void;
   onOpenTemplates?: () => void;
+  onOpenDemandSignal?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -32,6 +33,7 @@ interface QuickAction {
   bookingShortcut?: boolean;
   scheduleShortcut?: boolean;
   templatesShortcut?: boolean;
+  demandSignalShortcut?: boolean;
 }
 
 const participantQuickActions: QuickAction[] = [
@@ -44,6 +46,7 @@ const participantQuickActions: QuickAction[] = [
 const providerQuickActions: QuickAction[] = [
   { title: 'Set Availability', subtitle: 'Time blocks', icon: 'calendar', color: '#0B4F6C', bg: '#D0EAF2', availabilityShortcut: true },
   { title: 'My Schedule', subtitle: 'Upcoming sessions', icon: 'time', color: '#E8734A', bg: '#FFF1EA', scheduleShortcut: true },
+  { title: 'Instant Requests', subtitle: 'Live participant requests', icon: 'flash', color: '#E53E3E', bg: '#FFF5F5', demandSignalShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4', templatesShortcut: true },
@@ -52,6 +55,7 @@ const providerQuickActions: QuickAction[] = [
 
 const supportWorkerQuickActions: QuickAction[] = [
   { title: 'Shift Note AI', subtitle: 'Capture and review', icon: 'mic', color: '#0B4F6C', bg: '#D0EAF2' },
+  { title: 'Instant Requests', subtitle: 'Live participant requests', icon: 'flash', color: '#E53E3E', bg: '#FFF5F5', demandSignalShortcut: true },
   { title: 'Wellness', subtitle: 'Simple reset', icon: 'heart', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'NDIS Education Library', subtitle: 'Plain-language guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Knowledge Agent', subtitle: 'Cited answers', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', educationShortcut: true },
@@ -121,6 +125,7 @@ export function HomeScreen({
   onOpenBookings,
   onOpenSchedule,
   onOpenTemplates,
+  onOpenDemandSignal,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -344,7 +349,9 @@ export function HomeScreen({
                           ? onOpenSchedule
                           : action.templatesShortcut
                             ? onOpenTemplates
-                            : undefined
+                            : action.demandSignalShortcut
+                              ? onOpenDemandSignal
+                              : undefined
                 }
               />
             ))}
