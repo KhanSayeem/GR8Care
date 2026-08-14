@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   language: string;
+  location?: string;
 }
 
 interface AuthState {

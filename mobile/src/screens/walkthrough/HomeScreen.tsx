@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BookingDetailRecord, getBookingDetail, getBookings } from '../../api/booking';
 import { ProviderScheduleBlock, ProviderStats, getProviderScheduleToday, getProviderStats } from '../../api/providerDashboard';
 import { Badge, Card, ProgressBar } from '../../components';
-import { careSummary, fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
+import { fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
+import { useAuthStore } from '../../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -117,6 +119,22 @@ function formatDashboardCurrency(value: number) {
   });
 }
 
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function formatUpcomingWhen(scheduledStart: string) {
+  const start = new Date(scheduledStart);
+  const isToday = new Date().toDateString() === start.toDateString();
+  const dayLabel = isToday ? 'Today' : start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeLabel = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${dayLabel}, ${timeLabel}`;
+}
+
 export function HomeScreen({
   roleLabel,
   providerSection = 'dashboard',
@@ -138,6 +156,12 @@ export function HomeScreen({
   const [providerRefreshing, setProviderRefreshing] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
 
+  const [upcomingBooking, setUpcomingBooking] = useState<BookingDetailRecord | null>(null);
+  const [upcomingLoading, setUpcomingLoading] = useState(false);
+  const [upcomingError, setUpcomingError] = useState<string | null>(null);
+
+  const user = useAuthStore((state) => state.user);
+
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
   const isSupportWorkerDashboard = roleLabel === 'Support Worker' && providerSection === 'dashboard';
   const isProviderDashboard = isProviderShell && providerSection === 'dashboard';
@@ -145,7 +169,7 @@ export function HomeScreen({
     ? isSupportWorkerDashboard
       ? 'Support Worker home'
       : `${roleLabel} ${providerSectionCopy[providerSection].title.toLowerCase()}`
-    : careSummary.participantName;
+    : (user?.fullName ?? 'Your account');
   const quickActions = isSupportWorkerDashboard ? supportWorkerQuickActions : isProviderShell ? providerQuickActions : participantQuickActions;
   const visibleResources = providerSection === 'workforce'
     ? workforceResources.filter((resource) => resource.tag === 'Drafting' || resource.tag === 'Practice')
@@ -183,6 +207,36 @@ export function HomeScreen({
   useEffect(() => {
     loadProviderDashboard();
   }, [loadProviderDashboard]);
+
+  useEffect(() => {
+    if (isProviderShell) return;
+
+    let cancelled = false;
+    setUpcomingLoading(true);
+    setUpcomingError(null);
+
+    getBookings('upcoming')
+      .then((list) => {
+        if (cancelled) return null;
+        const first = list.bookings[0];
+        return first ? getBookingDetail(first.id) : null;
+      })
+      .then((detail) => {
+        if (cancelled) return;
+        setUpcomingBooking(detail?.booking ?? null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setUpcomingError(err instanceof Error ? err.message : 'Upcoming bookings could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setUpcomingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isProviderShell]);
 
   const providerMetricCards = providerStats
     ? [
@@ -230,7 +284,7 @@ export function HomeScreen({
                     ? 'MVP tools'
                     : isProviderShell
                       ? 'Education hub'
-                      : 'Parramatta LGA Zone'}
+                      : (user?.location || 'Location not set')}
               </Text>
             </View>
             {isProviderDashboard && providerStats ? (
@@ -443,19 +497,37 @@ export function HomeScreen({
                 <Text style={styles.upcomingLabel}>Upcoming Bookings</Text>
                 <Ionicons name="chevron-forward" color="#A0AEC0" size={16} />
               </Pressable>
-              <Pressable accessibilityRole="button" onPress={onOpenBookings}>
+              {upcomingLoading ? (
                 <Card style={styles.bookingCard}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>MR</Text>
-                  </View>
-                  <View style={styles.bookingCopy}>
-                    <Text style={styles.bookingName}>Maria Rodriguez</Text>
-                    <Text style={styles.bookingService}>Occupational Therapy</Text>
-                    <Text style={styles.bookingTime}>{careSummary.nextVisit}</Text>
-                  </View>
-                  <Badge label="Confirmed" tone="success" />
+                  <ActivityIndicator color="#0B4F6C" />
+                  <Text style={styles.bookingService}>Loading your upcoming booking...</Text>
                 </Card>
-              </Pressable>
+              ) : upcomingError ? (
+                <Card style={styles.bookingCard}>
+                  <Ionicons name="alert-circle" color="#E53E3E" size={20} />
+                  <Text style={styles.bookingService}>{upcomingError}</Text>
+                </Card>
+              ) : upcomingBooking ? (
+                <Pressable accessibilityRole="button" onPress={onOpenBookings}>
+                  <Card style={styles.bookingCard}>
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarText}>{initials(upcomingBooking.provider?.displayName ?? 'Provider')}</Text>
+                    </View>
+                    <View style={styles.bookingCopy}>
+                      <Text style={styles.bookingName}>{upcomingBooking.provider?.displayName ?? 'Provider'}</Text>
+                      <Text style={styles.bookingService}>{upcomingBooking.service}</Text>
+                      <Text style={styles.bookingTime}>{formatUpcomingWhen(upcomingBooking.scheduledStart)}</Text>
+                    </View>
+                    <Badge label={upcomingBooking.status === 'confirmed' ? 'Confirmed' : 'Pending'} tone={upcomingBooking.status === 'confirmed' ? 'success' : 'warning'} />
+                  </Card>
+                </Pressable>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={onOpenBooking}>
+                  <Card style={styles.bookingCard}>
+                    <Text style={styles.bookingService}>No upcoming bookings yet. Tap to book a service.</Text>
+                  </Card>
+                </Pressable>
+              )}
 
               <View style={styles.taskStack}>
                 {shiftTasks.map((task) => (
