@@ -3,6 +3,11 @@ const { Server } = require('socket.io');
 const app = require('./app');
 const connectDB = require('./config/db');
 const { port, corsOrigin } = require('./config/env');
+const { verifyToken } = require('./utils/jwt');
+const User = require('./models/User');
+
+const PROVIDER_ROOM_ROLES = ['provider', 'supportWorker'];
+const PARTICIPANT_ROOM_ROLES = ['participant', 'caregiver'];
 
 async function start() {
   await connectDB();
@@ -13,6 +18,22 @@ async function start() {
 
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
+
+    socket.on('join', async ({ token } = {}) => {
+      try {
+        const payload = verifyToken(token);
+        const user = await User.findById(payload.sub);
+        if (!user || !user.isActive) return;
+
+        if (PROVIDER_ROOM_ROLES.includes(user.role)) {
+          socket.join(`provider:${user._id}`);
+        } else if (PARTICIPANT_ROOM_ROLES.includes(user.role)) {
+          socket.join(`participant:${user._id}`);
+        }
+      } catch (err) {
+        // Invalid or expired token: no-op, do not crash the socket.
+      }
+    });
   });
 
   server.listen(port, () => {

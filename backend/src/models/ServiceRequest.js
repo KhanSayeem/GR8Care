@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 
-const SERVICE_REQUEST_STATUSES = ['draft', 'submitted', 'matched', 'booked', 'cancelled'];
+const SERVICE_REQUEST_STATUSES = [
+  'draft',
+  'submitted',
+  'matched',
+  'booked',
+  'cancelled',
+  'accepted',
+  'declined',
+  'expired',
+];
 const SERVICE_REQUEST_SOURCES = ['participant', 'caregiver', 'provider', 'admin'];
 
 const serviceRequestSchema = new mongoose.Schema(
@@ -42,6 +51,9 @@ const serviceRequestSchema = new mongoose.Schema(
     },
     notes: { type: String, trim: true, default: '' },
     metadata: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    expiresAt: { type: Date, default: null },
+    respondedAt: { type: Date, default: null },
+    declineReason: { type: String, trim: true, default: '' },
   },
   { timestamps: true }
 );
@@ -56,6 +68,16 @@ serviceRequestSchema.pre('validate', function validatePreferredWindow(next) {
   next();
 });
 
+function isExpired(request, asOf = new Date()) {
+  return Boolean(
+    request &&
+      request.status === 'submitted' &&
+      request.expiresAt &&
+      asOf > request.expiresAt
+  );
+}
+
 module.exports = mongoose.model('ServiceRequest', serviceRequestSchema);
 module.exports.SERVICE_REQUEST_STATUSES = SERVICE_REQUEST_STATUSES;
 module.exports.SERVICE_REQUEST_SOURCES = SERVICE_REQUEST_SOURCES;
+module.exports.isExpired = isExpired;
