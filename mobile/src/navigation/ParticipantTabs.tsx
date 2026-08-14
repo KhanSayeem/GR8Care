@@ -9,12 +9,23 @@ import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryS
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
+import { MyBookingsScreen } from '../screens/walkthrough/MyBookingsScreen';
 import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 import { BookingDraft, ServiceSelection, ScheduleSelection } from '../types/bookingDraft';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications' | 'bookService' | 'bookSchedule' | 'bookConfirm';
+type TabKey =
+  | 'home'
+  | 'match'
+  | 'learn'
+  | 'funding'
+  | 'account'
+  | 'notifications'
+  | 'bookService'
+  | 'bookSchedule'
+  | 'bookConfirm'
+  | 'bookings';
 
 const tabs: Array<{
   key: TabKey;
@@ -43,7 +54,7 @@ export function ParticipantTabs() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [draft, setDraft] = useState<Partial<BookingDraft>>({});
   const insets = useSafeAreaInsets();
-  const showTabBar = activeTab !== 'bookService' && activeTab !== 'bookSchedule' && activeTab !== 'bookConfirm';
+  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings'].includes(activeTab);
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -96,6 +107,8 @@ export function ParticipantTabs() {
             }}
           />
         );
+      case 'bookings':
+        return <MyBookingsScreen onBack={() => setActiveTab('home')} />;
       case 'home':
       default:
         return (
@@ -104,6 +117,7 @@ export function ParticipantTabs() {
             onOpenEducation={() => setActiveTab('learn')}
             onOpenNotifications={() => setActiveTab('notifications')}
             onOpenBooking={() => setActiveTab('bookService')}
+            onOpenBookings={() => setActiveTab('bookings')}
           />
         );
     }

@@ -14,6 +14,7 @@ interface HomeScreenProps {
   onOpenAvailability?: () => void;
   onOpenNotifications?: () => void;
   onOpenBooking?: () => void;
+  onOpenBookings?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -112,6 +113,7 @@ export function HomeScreen({
   onOpenAvailability,
   onOpenNotifications,
   onOpenBooking,
+  onOpenBookings,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -404,18 +406,23 @@ export function HomeScreen({
                 <Ionicons name="arrow-forward" color="#0B4F6C" size={16} />
               </View>
 
-              <Text style={styles.upcomingLabel}>Upcoming Bookings</Text>
-              <Card style={styles.bookingCard}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>MR</Text>
-                </View>
-                <View style={styles.bookingCopy}>
-                  <Text style={styles.bookingName}>Maria Rodriguez</Text>
-                  <Text style={styles.bookingService}>Occupational Therapy</Text>
-                  <Text style={styles.bookingTime}>{careSummary.nextVisit}</Text>
-                </View>
-                <Badge label="Confirmed" tone="success" />
-              </Card>
+              <Pressable accessibilityRole="button" onPress={onOpenBookings} style={styles.upcomingRow}>
+                <Text style={styles.upcomingLabel}>Upcoming Bookings</Text>
+                <Ionicons name="chevron-forward" color="#A0AEC0" size={16} />
+              </Pressable>
+              <Pressable accessibilityRole="button" onPress={onOpenBookings}>
+                <Card style={styles.bookingCard}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>MR</Text>
+                  </View>
+                  <View style={styles.bookingCopy}>
+                    <Text style={styles.bookingName}>Maria Rodriguez</Text>
+                    <Text style={styles.bookingService}>Occupational Therapy</Text>
+                    <Text style={styles.bookingTime}>{careSummary.nextVisit}</Text>
+                  </View>
+                  <Badge label="Confirmed" tone="success" />
+                </Card>
+              </Pressable>
 
               <View style={styles.taskStack}>
                 {shiftTasks.map((task) => (
@@ -786,6 +793,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     fontWeight: '600',
+  },
+  upcomingRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   upcomingLabel: {
     color: '#A0AEC0',
