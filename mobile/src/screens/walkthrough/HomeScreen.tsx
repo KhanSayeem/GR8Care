@@ -215,8 +215,8 @@ export function HomeScreen({
     loadProviderDashboard();
   }, [loadProviderDashboard]);
 
-  useEffect(() => {
-    if (isProviderShell) return;
+  const loadUpcomingBooking = useCallback(() => {
+    if (isProviderShell) return () => {};
 
     let cancelled = false;
     setUpcomingLoading(true);
@@ -232,9 +232,9 @@ export function HomeScreen({
         if (cancelled) return;
         setUpcomingBooking(detail?.booking ?? null);
       })
-      .catch((err) => {
+      .catch(() => {
         if (cancelled) return;
-        setUpcomingError(err instanceof Error ? err.message : 'Upcoming bookings could not be loaded.');
+        setUpcomingError('Your upcoming booking could not be loaded. Check your connection and try again.');
       })
       .finally(() => {
         if (!cancelled) setUpcomingLoading(false);
@@ -244,6 +244,10 @@ export function HomeScreen({
       cancelled = true;
     };
   }, [isProviderShell]);
+
+  useEffect(() => {
+    return loadUpcomingBooking();
+  }, [loadUpcomingBooking]);
 
   const providerMetricCards = providerStats
     ? [
@@ -516,10 +520,15 @@ export function HomeScreen({
                   <Text style={styles.bookingService}>Loading your upcoming booking...</Text>
                 </Card>
               ) : upcomingError ? (
-                <Card style={styles.bookingCard}>
-                  <Ionicons name="alert-circle" color="#E53E3E" size={20} />
-                  <Text style={styles.bookingService}>{upcomingError}</Text>
-                </Card>
+                <Pressable accessibilityRole="button" onPress={loadUpcomingBooking}>
+                  <Card style={styles.bookingCard}>
+                    <Ionicons name="alert-circle" color="#E53E3E" size={20} />
+                    <View style={styles.bookingCopy}>
+                      <Text style={styles.bookingService}>{upcomingError}</Text>
+                      <Text style={[styles.bookingService, { color: '#0B4F6C', marginTop: 4 }]}>Tap to retry</Text>
+                    </View>
+                  </Card>
+                </Pressable>
               ) : upcomingBooking ? (
                 <Pressable accessibilityRole="button" onPress={onOpenBookings}>
                   <Card style={styles.bookingCard}>
