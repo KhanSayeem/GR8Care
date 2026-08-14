@@ -6,9 +6,11 @@ import { BookingDetailRecord, BookingStatus, BookingWindow, cancelBooking, getBo
 
 interface MyBookingsScreenProps {
   onBack: () => void;
+  onTrackProvider?: (booking: BookingDetailRecord) => void;
 }
 
 const CANCELLABLE_STATUSES: BookingStatus[] = ['pending', 'confirmed'];
+const TRACKABLE_STATUSES: BookingStatus[] = ['confirmed', 'inProgress'];
 
 const STATUS_BADGE: Record<BookingStatus, { label: string; tone: 'neutral' | 'success' | 'warning' | 'error' | 'info' }> = {
   pending: { label: 'Pending', tone: 'warning' },
@@ -49,10 +51,21 @@ function formatWhen(scheduledStart: string, scheduledEnd: string) {
   return `${dayLabel} - ${formatTime12h(start)} - ${formatTime12h(end)}`;
 }
 
-function BookingCard({ booking, onCancel, cancelling }: { booking: BookingDetailRecord; onCancel: () => void; cancelling: boolean }) {
+function BookingCard({
+  booking,
+  onCancel,
+  onTrack,
+  cancelling,
+}: {
+  booking: BookingDetailRecord;
+  onCancel: () => void;
+  onTrack?: () => void;
+  cancelling: boolean;
+}) {
   const providerName = booking.provider?.displayName ?? 'Provider';
   const badge = STATUS_BADGE[booking.status];
   const canCancel = CANCELLABLE_STATUSES.includes(booking.status);
+  const canTrack = TRACKABLE_STATUSES.includes(booking.status) && Boolean(onTrack);
 
   return (
     <Card className="bg-white">
@@ -69,10 +82,15 @@ function BookingCard({ booking, onCancel, cancelling }: { booking: BookingDetail
       </View>
 
       <View className="mt-3 flex-row gap-3">
-        <View className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-md bg-teal-dark">
+        <Pressable
+          accessibilityRole="button"
+          disabled={!canTrack}
+          onPress={onTrack}
+          className={`h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-md bg-teal-dark ${canTrack ? '' : 'opacity-50'}`}
+        >
           <Ionicons name="location" color="#F7F3EE" size={14} />
           <Text className="font-body-bold text-caption text-cream">Track Provider</Text>
-        </View>
+        </Pressable>
         {canCancel ? (
           <Pressable
             accessibilityRole="button"
@@ -88,7 +106,7 @@ function BookingCard({ booking, onCancel, cancelling }: { booking: BookingDetail
   );
 }
 
-export function MyBookingsScreen({ onBack }: MyBookingsScreenProps) {
+export function MyBookingsScreen({ onBack, onTrackProvider }: MyBookingsScreenProps) {
   const [tab, setTab] = useState<BookingWindow>('upcoming');
   const [bookings, setBookings] = useState<BookingDetailRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,7 +223,13 @@ export function MyBookingsScreen({ onBack }: MyBookingsScreenProps) {
               </Card>
             ) : (
               bookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} cancelling={cancellingId === booking.id} onCancel={() => confirmCancel(booking)} />
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  cancelling={cancellingId === booking.id}
+                  onCancel={() => confirmCancel(booking)}
+                  onTrack={onTrackProvider ? () => onTrackProvider(booking) : undefined}
+                />
               ))
             )}
           </View>
