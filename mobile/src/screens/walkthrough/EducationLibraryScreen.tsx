@@ -15,12 +15,14 @@ import { ScreenShell } from './ScreenShell';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
-export function EducationLibraryScreen() {
+interface EducationLibraryScreenProps {
+  onOpenAiBot?: () => void;
+}
+
+export function EducationLibraryScreen({ onOpenAiBot }: EducationLibraryScreenProps = {}) {
   const [activeCategory, setActiveCategory] = useState(educationCategories[0]);
   const [selectedArticle, setSelectedArticle] = useState(educationTopics[0]);
   const [selectedLanguageCode, setSelectedLanguageCode] = useState(educationChatbotLanguages[0].code);
-  const [knowledgeQuestion, setKnowledgeQuestion] = useState(knowledgeAgentAnswer.question);
-  const [knowledgeAnswerVisible, setKnowledgeAnswerVisible] = useState(true);
   const [question, setQuestion] = useState(educationChatbotLanguages[0].question);
   const [answerVisible, setAnswerVisible] = useState(true);
   const [isReadAloud, setIsReadAloud] = useState(false);
@@ -58,10 +60,6 @@ export function EducationLibraryScreen() {
   const handleSearchPress = () => {
     setAnswerVisible(true);
     setIsReadAloud(false);
-  };
-
-  const handleKnowledgeSearchPress = () => {
-    setKnowledgeAnswerVisible(true);
   };
 
   return (
@@ -181,52 +179,9 @@ export function EducationLibraryScreen() {
         <Text className="mt-2 font-body text-body text-text-mid">
           Search education content only with retrieved-answer framing and visible citations.
         </Text>
-        <Text className="mt-4 font-caption text-label uppercase text-text-mid">Education-content question</Text>
-        <TextInput
-          accessibilityLabel="Ask the NDIS Knowledge Agent"
-          className="mt-4 rounded-md border border-teal-mid bg-white px-3 py-3 font-body text-body text-text-dark"
-          multiline
-          onChangeText={(value) => {
-            setKnowledgeQuestion(value);
-            setKnowledgeAnswerVisible(false);
-          }}
-          placeholder="Ask a question about education library content"
-          placeholderTextColor="#A0AEC0"
-          value={knowledgeQuestion}
-        />
-        <View className="mt-3">
-          <Button label="Search education content" onPress={handleKnowledgeSearchPress} disabled={knowledgeQuestion.trim().length === 0} />
+        <View style={{ marginTop: 16 }}>
+          <Button label="Open S-TRAH AI" onPress={onOpenAiBot} disabled={!onOpenAiBot} />
         </View>
-        {knowledgeAnswerVisible ? (
-          <View className="mt-4 rounded-md border border-border bg-white p-3">
-            <View className="flex-row flex-wrap items-start justify-between gap-2">
-              <View className="flex-1">
-                <Text className="font-body-medium text-caption text-text-dark">Retrieved answer</Text>
-                <Text className="mt-1 font-body text-caption text-text-mid">{knowledgeAgentAnswer.mode}</Text>
-              </View>
-              <Badge label="Educational only" tone="info" />
-            </View>
-            <Text className="mt-3 font-body text-body text-text-mid">{knowledgeAgentAnswer.answer}</Text>
-            <Text className="mt-3 font-caption text-label uppercase text-text-mid">Citations</Text>
-            <View className="mt-2 gap-2">
-              {knowledgeAgentAnswer.citations.map((citation) => (
-                <View key={citation.title} className="rounded-md border border-teal-light bg-cream p-3">
-                  <View className="flex-row flex-wrap items-start justify-between gap-2">
-                    <Text className="flex-1 font-body-medium text-caption text-text-dark">{citation.title}</Text>
-                    <Badge label={citation.score} tone="neutral" />
-                  </View>
-                  <Text className="mt-1 font-body text-caption text-text-mid">{citation.category}</Text>
-                  <Text className="mt-1 font-body text-caption text-text-mid">{citation.sourceReference}</Text>
-                </View>
-              ))}
-            </View>
-            <View className="mt-3 rounded-md border border-teal-light bg-cream p-3">
-              <Text className="font-body text-caption text-text-mid">
-                Educational only. This is not NDIA advice, legal advice, clinical advice, funding approval, an individual NDIA decision review, or an official NDIA communication channel.
-              </Text>
-            </View>
-          </View>
-        ) : null}
       </Card>
 
       <Card>

@@ -13,6 +13,7 @@ interface HomeScreenProps {
   roleLabel: string;
   providerSection?: ProviderSection;
   onOpenEducation?: () => void;
+  onOpenAiBot?: () => void;
   onOpenAvailability?: () => void;
   onOpenNotifications?: () => void;
   onOpenBooking?: () => void;
@@ -32,6 +33,7 @@ interface QuickAction {
   color: string;
   bg: string;
   educationShortcut?: boolean;
+  aiBotShortcut?: boolean;
   availabilityShortcut?: boolean;
   bookingShortcut?: boolean;
   scheduleShortcut?: boolean;
@@ -45,6 +47,7 @@ const participantQuickActions: QuickAction[] = [
   { title: 'Find Provider', subtitle: 'Search by area', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF', findProvidersShortcut: true },
   { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA', bookingShortcut: true },
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
+  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', aiBotShortcut: true },
 ];
 
 const providerQuickActions: QuickAction[] = [
@@ -52,7 +55,7 @@ const providerQuickActions: QuickAction[] = [
   { title: 'My Schedule', subtitle: 'Upcoming sessions', icon: 'time', color: '#E8734A', bg: '#FFF1EA', scheduleShortcut: true },
   { title: 'Instant Requests', subtitle: 'Live participant requests', icon: 'flash', color: '#E53E3E', bg: '#FFF5F5', demandSignalShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
-  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
+  { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', aiBotShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4', templatesShortcut: true },
   { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
@@ -62,7 +65,7 @@ const supportWorkerQuickActions: QuickAction[] = [
   { title: 'Instant Requests', subtitle: 'Live participant requests', icon: 'flash', color: '#E53E3E', bg: '#FFF5F5', demandSignalShortcut: true },
   { title: 'Wellness', subtitle: 'Simple reset', icon: 'heart', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'NDIS Education Library', subtitle: 'Plain-language guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
-  { title: 'Knowledge Agent', subtitle: 'Cited answers', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', educationShortcut: true },
+  { title: 'Knowledge Agent', subtitle: 'Cited answers', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', aiBotShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D1B69', bg: '#EDE9FF', templatesShortcut: true },
 ];
 
@@ -139,6 +142,7 @@ export function HomeScreen({
   roleLabel,
   providerSection = 'dashboard',
   onOpenEducation,
+  onOpenAiBot,
   onOpenAvailability,
   onOpenNotifications,
   onOpenBooking,
@@ -400,7 +404,9 @@ export function HomeScreen({
                 onPress={
                   action.educationShortcut
                     ? onOpenEducation
-                    : action.availabilityShortcut
+                    : action.aiBotShortcut
+                      ? onOpenAiBot
+                      : action.availabilityShortcut
                       ? onOpenAvailability
                       : action.bookingShortcut
                         ? onOpenBooking

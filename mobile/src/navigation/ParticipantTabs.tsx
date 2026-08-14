@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AiEducatorBotScreen } from '../screens/walkthrough/AiEducatorBotScreen';
 import { BookServiceStep1Screen } from '../screens/walkthrough/BookServiceStep1Screen';
 import { BookServiceStep2Screen } from '../screens/walkthrough/BookServiceStep2Screen';
 import { BookServiceStep3Screen } from '../screens/walkthrough/BookServiceStep3Screen';
@@ -27,7 +28,8 @@ type TabKey =
   | 'bookService'
   | 'bookSchedule'
   | 'bookConfirm'
-  | 'bookings';
+  | 'bookings'
+  | 'aiBot';
 
 const tabs: Array<{
   key: TabKey;
@@ -58,7 +60,7 @@ export function ParticipantTabs() {
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [bookingProviderId, setBookingProviderId] = useState<string | undefined>(undefined);
   const insets = useSafeAreaInsets();
-  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile'].includes(activeTab);
+  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile', 'aiBot'].includes(activeTab);
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -83,7 +85,7 @@ export function ParticipantTabs() {
           />
         ) : null;
       case 'learn':
-        return <EducationLibraryScreen />;
+        return <EducationLibraryScreen onOpenAiBot={() => setActiveTab('aiBot')} />;
       case 'funding':
         return <FundingScreen />;
       case 'notifications':
@@ -133,12 +135,15 @@ export function ParticipantTabs() {
         );
       case 'bookings':
         return <MyBookingsScreen onBack={() => setActiveTab('home')} />;
+      case 'aiBot':
+        return <AiEducatorBotScreen onBack={() => setActiveTab('home')} />;
       case 'home':
       default:
         return (
           <HomeScreen
             roleLabel="Participant"
             onOpenEducation={() => setActiveTab('learn')}
+            onOpenAiBot={() => setActiveTab('aiBot')}
             onOpenNotifications={() => setActiveTab('notifications')}
             onOpenBooking={() => {
               setBookingProviderId(undefined);
