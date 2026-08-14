@@ -4,15 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookServiceStep1Screen } from '../screens/walkthrough/BookServiceStep1Screen';
 import { BookServiceStep2Screen } from '../screens/walkthrough/BookServiceStep2Screen';
+import { BookServiceStep3Screen } from '../screens/walkthrough/BookServiceStep3Screen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
 import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { BookingDraft, ServiceSelection, ScheduleSelection } from '../types/bookingDraft';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications' | 'bookService' | 'bookSchedule';
+type TabKey = 'home' | 'match' | 'learn' | 'funding' | 'account' | 'notifications' | 'bookService' | 'bookSchedule' | 'bookConfirm';
 
 const tabs: Array<{
   key: TabKey;
@@ -39,8 +41,9 @@ export type ParticipantTabParamList = {
 
 export function ParticipantTabs() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [draft, setDraft] = useState<Partial<BookingDraft>>({});
   const insets = useSafeAreaInsets();
-  const showTabBar = activeTab !== 'bookService' && activeTab !== 'bookSchedule';
+  const showTabBar = activeTab !== 'bookService' && activeTab !== 'bookSchedule' && activeTab !== 'bookConfirm';
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -55,9 +58,44 @@ export function ParticipantTabs() {
       case 'account':
         return <ProfileScreen />;
       case 'bookService':
-        return <BookServiceStep1Screen onBack={() => setActiveTab('home')} onContinue={() => setActiveTab('bookSchedule')} />;
+        return (
+          <BookServiceStep1Screen
+            onBack={() => setActiveTab('home')}
+            onContinue={(selection: ServiceSelection) => {
+              setDraft((prev) => ({ ...prev, ...selection }));
+              setActiveTab('bookSchedule');
+            }}
+          />
+        );
       case 'bookSchedule':
-        return <BookServiceStep2Screen onBack={() => setActiveTab('bookService')} />;
+        return (
+          <BookServiceStep2Screen
+            onBack={() => setActiveTab('bookService')}
+            onContinue={(schedule: ScheduleSelection) => {
+              setDraft((prev) => ({ ...prev, ...schedule }));
+              setActiveTab('bookConfirm');
+            }}
+          />
+        );
+      case 'bookConfirm':
+        return draft.service && draft.provider && draft.slot && draft.date ? (
+          <BookServiceStep3Screen
+            draft={draft as BookingDraft}
+            onBack={() => setActiveTab('bookSchedule')}
+            onDone={() => {
+              setDraft({});
+              setActiveTab('home');
+            }}
+          />
+        ) : (
+          <BookServiceStep1Screen
+            onBack={() => setActiveTab('home')}
+            onContinue={(selection: ServiceSelection) => {
+              setDraft((prev) => ({ ...prev, ...selection }));
+              setActiveTab('bookSchedule');
+            }}
+          />
+        );
       case 'home':
       default:
         return (
@@ -69,7 +107,7 @@ export function ParticipantTabs() {
           />
         );
     }
-  }, [activeTab]);
+  }, [activeTab, draft]);
 
   return (
     <View style={styles.shell}>

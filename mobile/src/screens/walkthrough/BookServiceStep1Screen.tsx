@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card } from '../../components';
+import { ServiceSelection } from '../../types/bookingDraft';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface BookServiceStep1ScreenProps {
   onBack: () => void;
-  onContinue?: () => void;
+  onContinue?: (selection: ServiceSelection) => void;
 }
 
 const SERVICE_OPTIONS: Array<{
@@ -207,7 +208,11 @@ export function BookServiceStep1Screen({ onBack, onContinue }: BookServiceStep1S
               label={saved ? 'Next: Choose Date & Time' : 'Save service preferences'}
               onPress={() => {
                 if (saved) {
-                  onContinue?.();
+                  onContinue?.({
+                    service: selectedService,
+                    assignmentMethod,
+                    sessionType,
+                  });
                   return;
                 }
                 setSaved(true);

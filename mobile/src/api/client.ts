@@ -18,7 +18,18 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body.error || `Request failed with status ${res.status}`);
+    const error = new ApiError(body.error || `Request failed with status ${res.status}`, res.status);
+    throw error;
   }
   return body;
+}
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
 }

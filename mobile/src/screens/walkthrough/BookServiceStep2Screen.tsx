@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StatusBar, Text, View } from 
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card } from '../../components';
 import { AvailabilityDay, AvailabilitySlot, getProviderAvailability } from '../../api/booking';
+import { ScheduleSelection } from '../../types/bookingDraft';
 
 // Placeholder until a "Find Providers" flow supplies a real selection. Override for local
 // testing with EXPO_PUBLIC_DEMO_PROVIDER_ID; an empty value shows the "no provider" state.
@@ -10,6 +11,7 @@ const DEMO_PROVIDER_ID = process.env.EXPO_PUBLIC_DEMO_PROVIDER_ID ?? '';
 
 interface BookServiceStep2ScreenProps {
   onBack: () => void;
+  onContinue?: (schedule: ScheduleSelection) => void;
   providerId?: string;
 }
 
@@ -115,9 +117,10 @@ function TimeSlotRow({ slot, selected, onPress }: { slot: AvailabilitySlot; sele
   );
 }
 
-export function BookServiceStep2Screen({ onBack, providerId = DEMO_PROVIDER_ID }: BookServiceStep2ScreenProps) {
+export function BookServiceStep2Screen({ onBack, onContinue, providerId = DEMO_PROVIDER_ID }: BookServiceStep2ScreenProps) {
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
   const [availabilityDays, setAvailabilityDays] = useState<AvailabilityDay[]>([]);
+  const [providerName, setProviderName] = useState('');
   const [boundary, setBoundary] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,6 +146,7 @@ export function BookServiceStep2Screen({ onBack, providerId = DEMO_PROVIDER_ID }
         const result = await getProviderAvailability(providerId, startDate, endDate);
         setAvailabilityDays(result.days);
         setBoundary(result.boundary);
+        setProviderName(result.provider.displayName);
         const firstOpenDay = result.days.find((day) => day.date >= todayStr && day.openSlots.length > 0);
         setSelectedDate(firstOpenDay?.date ?? null);
         setSelectedSlotId(null);
@@ -353,7 +357,17 @@ export function BookServiceStep2Screen({ onBack, providerId = DEMO_PROVIDER_ID }
           ) : null}
 
           <View className="mt-5 gap-3">
-            <Button label={confirmed ? 'Schedule selection saved' : 'Next: Confirm Booking'} disabled={!selectedSlot} onPress={() => setConfirmed(true)} />
+            <Button
+              label={confirmed ? 'Next: Confirm Booking' : 'Save schedule selection'}
+              disabled={!selectedSlot}
+              onPress={() => {
+                if (confirmed && selectedSlot && selectedDate) {
+                  onContinue?.({ provider: { id: providerId, name: providerName }, date: selectedDate, slot: selectedSlot });
+                  return;
+                }
+                setConfirmed(true);
+              }}
+            />
             <Button label="← Change Service" variant="outline" onPress={onBack} />
           </View>
 
