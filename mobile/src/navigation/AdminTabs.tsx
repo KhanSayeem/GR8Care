@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AdminDashboardScreen } from '../screens/walkthrough/AdminDashboardScreen';
+import { AdminSettingsScreen } from '../screens/walkthrough/AdminSettingsScreen';
 import { ProviderVerificationScreen } from '../screens/walkthrough/ProviderVerificationScreen';
 import { ReportsScreen } from '../screens/walkthrough/ReportsScreen';
 import { UserManagementScreen } from '../screens/walkthrough/UserManagementScreen';
@@ -11,6 +12,7 @@ export type AdminTabParamList = {
   Users: undefined;
   Verification: undefined;
   Reports: undefined;
+  Settings: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -42,6 +44,7 @@ export function AdminTabs() {
         component={ProviderVerificationScreen}
       />
       <Tab.Screen name="Reports" options={{ tabBarLabel: 'Reports', tabBarIcon: tabIcon('bar-chart', 'bar-chart-outline') }} component={ReportsScreen} />
+      <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={AdminSettingsScreen} />
     </Tab.Navigator>
   );
 }
