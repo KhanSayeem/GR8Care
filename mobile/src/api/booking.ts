@@ -135,3 +135,21 @@ export async function cancelBooking(id: string, reason?: string) {
     body: JSON.stringify({ reason: reason ?? 'Cancelled by participant' }),
   }) as Promise<CancelBookingResponse>;
 }
+
+export interface UpdateBookingInput {
+  notes?: string;
+  status?: BookingStatus;
+}
+
+export interface UpdateBookingResponse {
+  mode: 'bookingUpdated';
+  boundary: string;
+  booking: BookingDetailRecord;
+}
+
+export async function updateBooking(id: string, input: UpdateBookingInput) {
+  return apiFetch(`/bookings/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  }) as Promise<UpdateBookingResponse>;
+}

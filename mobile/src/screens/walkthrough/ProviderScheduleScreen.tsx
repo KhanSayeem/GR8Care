@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Badge, Button, Card } from '../../components';
 import { BookingDetailRecord, BookingStatus, getBookingDetail, getBookings } from '../../api/booking';
 
 interface ProviderScheduleScreenProps {
   onBack: () => void;
   onOpenAvailability?: () => void;
+  onSelectBooking?: (bookingId: string) => void;
 }
 
 type RangeKey = 'this-week' | 'next-week' | 'month';
@@ -77,25 +79,27 @@ function formatTimeRange(startIso: string, endIso: string) {
   return `${formatTime12h(new Date(startIso))} - ${formatTime12h(new Date(endIso))}`;
 }
 
-function SessionCard({ booking }: { booking: BookingDetailRecord }) {
+function SessionCard({ booking, onPress }: { booking: BookingDetailRecord; onPress?: () => void }) {
   const badge = STATUS_BADGE[booking.status];
   const participantName = booking.participant?.displayName ?? 'Participant';
 
   return (
-    <Card className="bg-white">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="min-w-0 flex-1">
-          <Text className="font-heading text-h3 text-text-dark">{participantName}</Text>
-          <Text className="mt-0.5 font-body text-caption text-text-mid">{booking.service}</Text>
-          <Text className="mt-0.5 font-body text-caption text-text-light">{formatTimeRange(booking.scheduledStart, booking.scheduledEnd)}</Text>
+    <Pressable accessibilityRole="button" onPress={onPress}>
+      <Card className="bg-white">
+        <View className="flex-row items-start justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <Text className="font-heading text-h3 text-text-dark">{participantName}</Text>
+            <Text className="mt-0.5 font-body text-caption text-text-mid">{booking.service}</Text>
+            <Text className="mt-0.5 font-body text-caption text-text-light">{formatTimeRange(booking.scheduledStart, booking.scheduledEnd)}</Text>
+          </View>
+          <Badge label={badge.label} tone={badge.tone} />
         </View>
-        <Badge label={badge.label} tone={badge.tone} />
-      </View>
-    </Card>
+      </Card>
+    </Pressable>
   );
 }
 
-export function ProviderScheduleScreen({ onBack, onOpenAvailability }: ProviderScheduleScreenProps) {
+export function ProviderScheduleScreen({ onBack, onOpenAvailability, onSelectBooking }: ProviderScheduleScreenProps) {
   const [range, setRange] = useState<RangeKey>('this-week');
   const [bookings, setBookings] = useState<BookingDetailRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,9 +124,11 @@ export function ProviderScheduleScreen({ onBack, onOpenAvailability }: ProviderS
     }
   }, []);
 
-  useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+  useFocusEffect(
+    useCallback(() => {
+      loadBookings();
+    }, [loadBookings])
+  );
 
   const days = useMemo(() => {
     const { start, end } = getRangeWindow(range);
@@ -218,7 +224,7 @@ export function ProviderScheduleScreen({ onBack, onOpenAvailability }: ProviderS
                   <Text className="font-caption text-label uppercase text-text-light">{formatDayHeading(day.date)}</Text>
                   <View className="gap-2">
                     {day.sessions.map((booking) => (
-                      <SessionCard key={booking.id} booking={booking} />
+                      <SessionCard key={booking.id} booking={booking} onPress={() => onSelectBooking?.(booking.id)} />
                     ))}
                   </View>
                 </View>

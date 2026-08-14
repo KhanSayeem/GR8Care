@@ -5,6 +5,7 @@ import { DocumentTemplatesScreen } from '../screens/walkthrough/DocumentTemplate
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { ProviderBookingDetailScreen } from '../screens/walkthrough/ProviderBookingDetailScreen';
 import { ProviderScheduleScreen } from '../screens/walkthrough/ProviderScheduleScreen';
 import { SetAvailabilityScreen } from '../screens/walkthrough/SetAvailabilityScreen';
 import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
@@ -14,6 +15,7 @@ export type ProviderTabParamList = {
   Dashboard: undefined;
   Availability: undefined;
   Schedule: undefined;
+  BookingDetail: { bookingId: string } | undefined;
   Resources: undefined;
   Templates: undefined;
   Workforce: undefined;
@@ -66,8 +68,32 @@ export function ProviderTabs() {
         }}
       >
         {({ navigation }) => (
-          <ProviderScheduleScreen onBack={() => navigation.navigate('Dashboard')} onOpenAvailability={() => navigation.navigate('Availability')} />
+          <ProviderScheduleScreen
+            onBack={() => navigation.navigate('Dashboard')}
+            onOpenAvailability={() => navigation.navigate('Availability')}
+            onSelectBooking={(bookingId) => navigation.navigate('BookingDetail', { bookingId })}
+          />
         )}
+      </Tab.Screen>
+      <Tab.Screen
+        name="BookingDetail"
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
+        }}
+      >
+        {({ navigation, route }) =>
+          route.params?.bookingId ? (
+            <ProviderBookingDetailScreen bookingId={route.params.bookingId} onBack={() => navigation.navigate('Schedule')} />
+          ) : (
+            <ProviderScheduleScreen
+              onBack={() => navigation.navigate('Dashboard')}
+              onOpenAvailability={() => navigation.navigate('Availability')}
+              onSelectBooking={(bookingId) => navigation.navigate('BookingDetail', { bookingId })}
+            />
+          )
+        }
       </Tab.Screen>
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
