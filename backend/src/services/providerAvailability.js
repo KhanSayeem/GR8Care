@@ -163,6 +163,18 @@ async function saveProviderAvailability(providerId, blocks = []) {
   };
 }
 
+async function getMyAvailability(providerId) {
+  const availability = await ProviderAvailability.findOne({ provider: providerId });
+
+  return {
+    mode: 'providerAvailability',
+    boundary: PROVIDER_AVAILABILITY_BOUNDARY,
+    availability: availability
+      ? serializeAvailability(availability)
+      : { providerId: String(providerId), blocks: [], updatedAt: null },
+  };
+}
+
 async function getProviderAvailability(providerId, { startDate, endDate } = {}) {
   if (!mongoose.isValidObjectId(providerId)) {
     const error = new Error('Provider not found');
@@ -216,6 +228,7 @@ async function getProviderAvailability(providerId, { startDate, endDate } = {}) 
 
 module.exports = {
   PROVIDER_AVAILABILITY_BOUNDARY,
+  getMyAvailability,
   getProviderAvailability,
   normalizeAvailabilityBlock,
   saveProviderAvailability,

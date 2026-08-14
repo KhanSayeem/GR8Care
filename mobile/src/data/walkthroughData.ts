@@ -33,41 +33,6 @@ export const shiftTasks = [
   { label: 'Progress note', status: 'Draft', tone: 'warning' as const },
 ];
 
-export const providerAvailabilityBlocks = [
-  {
-    id: 'mon-morning',
-    day: 'Monday',
-    start: '09:00',
-    end: '12:00',
-    service: 'Community access',
-    enabled: true,
-  },
-  {
-    id: 'mon-afternoon',
-    day: 'Monday',
-    start: '13:30',
-    end: '16:30',
-    service: 'In-home support',
-    enabled: true,
-  },
-  {
-    id: 'wed-afternoon',
-    day: 'Wednesday',
-    start: '12:00',
-    end: '15:00',
-    service: 'Plan review preparation',
-    enabled: false,
-  },
-  {
-    id: 'fri-morning',
-    day: 'Friday',
-    start: '08:30',
-    end: '11:30',
-    service: 'Transport support',
-    enabled: true,
-  },
-];
-
 export const workforceResources = [
   {
     title: 'Ask S-TRAH AI',

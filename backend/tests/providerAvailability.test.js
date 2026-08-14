@@ -111,6 +111,36 @@ describe('provider availability API', () => {
     });
     expect(stored.blocks).toHaveLength(2);
     expect(stored.blocks[0].service).toBe('Community access');
+
+    const getRes = await request(app)
+      .get('/providers/me/availability')
+      .set('Authorization', `Bearer ${registration.body.token}`);
+
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.mode).toBe('providerAvailability');
+    expect(getRes.body.availability.blocks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ day: 'Monday', enabled: true }),
+        expect.objectContaining({ day: 'Wednesday', enabled: false }),
+      ])
+    );
+  });
+
+  it('returns an empty block list from GET /providers/me/availability before anything is saved', async () => {
+    const registration = await request(app).post('/auth/register').send({
+      fullName: 'Provider No Availability Yet',
+      email: 'provider.no-availability@example.com',
+      password: 'supersecret',
+      role: 'provider',
+    });
+
+    const res = await request(app)
+      .get('/providers/me/availability')
+      .set('Authorization', `Bearer ${registration.body.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.availability.blocks).toEqual([]);
+    expect(res.body.availability.updatedAt).toBeNull();
   });
 
   it('allows support workers to use the same provider availability endpoint for MVP', async () => {

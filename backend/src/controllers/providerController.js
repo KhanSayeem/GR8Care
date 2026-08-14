@@ -1,5 +1,10 @@
 const { getProviderSchedule, getProviderScheduleToday, getProviderStats } = require('../services/providerDashboard');
-const { getProviderAvailability, saveProviderAvailability } = require('../services/providerAvailability');
+const { getMyAvailability, getProviderAvailability, saveProviderAvailability } = require('../services/providerAvailability');
+
+async function getMyAvailabilityHandler(req, res) {
+  const result = await getMyAvailability(req.user._id);
+  res.json(result);
+}
 
 async function setMyAvailability(req, res) {
   try {
@@ -68,6 +73,7 @@ async function getMySchedule(req, res) {
 }
 
 module.exports = {
+  getMyAvailabilityHandler,
   getProviderAvailabilityById,
   getMySchedule,
   getMyScheduleToday,
