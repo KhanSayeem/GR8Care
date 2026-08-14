@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuthStore } from '../store/authStore';
+import { AiEducatorBotScreen } from '../screens/walkthrough/AiEducatorBotScreen';
 import { DemandSignalScreen } from '../screens/walkthrough/DemandSignalScreen';
 import { DocumentTemplatesScreen } from '../screens/walkthrough/DocumentTemplatesScreen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
@@ -18,6 +19,7 @@ export type ProviderTabParamList = {
   Schedule: undefined;
   BookingDetail: { bookingId: string } | undefined;
   DemandSignal: undefined;
+  AiBot: undefined;
   Resources: undefined;
   Templates: undefined;
   Workforce: undefined;
@@ -50,6 +52,7 @@ export function ProviderTabs() {
             onOpenSchedule={() => navigation.navigate('Schedule')}
             onOpenTemplates={() => navigation.navigate('Templates')}
             onOpenDemandSignal={() => navigation.navigate('DemandSignal')}
+            onOpenAiBot={() => navigation.navigate('AiBot')}
           />
         )}
       </Tab.Screen>
@@ -109,7 +112,19 @@ export function ProviderTabs() {
       >
         {({ navigation }) => <DemandSignalScreen onBack={() => navigation.navigate('Dashboard')} />}
       </Tab.Screen>
-      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
+      <Tab.Screen
+        name="AiBot"
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
+        }}
+      >
+        {({ navigation }) => <AiEducatorBotScreen onBack={() => navigation.navigate('Dashboard')} />}
+      </Tab.Screen>
+      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }}>
+        {({ navigation }) => <EducationLibraryScreen onOpenAiBot={() => navigation.navigate('AiBot')} />}
+      </Tab.Screen>
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
       <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
       <Tab.Screen
