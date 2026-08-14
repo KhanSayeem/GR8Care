@@ -93,8 +93,10 @@ export function ProviderProfileScreen({ providerId, onBack, onBookSession }: Pro
                     <Ionicons name="checkmark-circle" color="#2D9E6B" size={20} />
                   ) : null}
                 </View>
-                <Text className="mt-1 font-body text-body text-text-mid">{provider.location || 'Location not listed'}</Text>
-                <View className="mt-2 flex-row items-center gap-2">
+                <Text style={{ marginTop: 8 }} className="font-body text-body text-text-mid">
+                  {provider.location || 'Location not listed'}
+                </Text>
+                <View style={{ marginTop: 16 }} className="flex-row flex-wrap items-center justify-center gap-2">
                   <Badge
                     label={provider.rating !== null ? `${provider.rating.toFixed(1)} rating` : 'New provider'}
                     tone={provider.rating !== null ? 'success' : 'neutral'}
