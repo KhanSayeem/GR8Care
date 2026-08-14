@@ -18,6 +18,7 @@ interface HomeScreenProps {
   onOpenSchedule?: () => void;
   onOpenTemplates?: () => void;
   onOpenDemandSignal?: () => void;
+  onOpenFindProviders?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -34,11 +35,12 @@ interface QuickAction {
   scheduleShortcut?: boolean;
   templatesShortcut?: boolean;
   demandSignalShortcut?: boolean;
+  findProvidersShortcut?: boolean;
 }
 
 const participantQuickActions: QuickAction[] = [
   { title: 'Education Library', subtitle: 'Browse categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
-  { title: 'Find Provider', subtitle: '40+ nearby', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF' },
+  { title: 'Find Provider', subtitle: 'Search by area', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF', findProvidersShortcut: true },
   { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA', bookingShortcut: true },
   { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
 ];
@@ -126,6 +128,7 @@ export function HomeScreen({
   onOpenSchedule,
   onOpenTemplates,
   onOpenDemandSignal,
+  onOpenFindProviders,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -351,7 +354,9 @@ export function HomeScreen({
                             ? onOpenTemplates
                             : action.demandSignalShortcut
                               ? onOpenDemandSignal
-                              : undefined
+                              : action.findProvidersShortcut
+                                ? onOpenFindProviders
+                                : undefined
                 }
               />
             ))}
