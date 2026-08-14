@@ -5,6 +5,7 @@ import { DocumentTemplatesScreen } from '../screens/walkthrough/DocumentTemplate
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { ProviderScheduleScreen } from '../screens/walkthrough/ProviderScheduleScreen';
 import { SetAvailabilityScreen } from '../screens/walkthrough/SetAvailabilityScreen';
 import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
 import { tabIcon } from './tabIcons';
@@ -12,6 +13,7 @@ import { tabIcon } from './tabIcons';
 export type ProviderTabParamList = {
   Dashboard: undefined;
   Availability: undefined;
+  Schedule: undefined;
   Resources: undefined;
   Templates: undefined;
   Workforce: undefined;
@@ -41,6 +43,7 @@ export function ProviderTabs() {
             providerSection="dashboard"
             onOpenAvailability={() => navigation.navigate('Availability')}
             onOpenEducation={() => navigation.navigate('Resources')}
+            onOpenSchedule={() => navigation.navigate('Schedule')}
           />
         )}
       </Tab.Screen>
@@ -53,6 +56,18 @@ export function ProviderTabs() {
         }}
       >
         {({ navigation }) => <SetAvailabilityScreen onBack={() => navigation.navigate('Dashboard')} />}
+      </Tab.Screen>
+      <Tab.Screen
+        name="Schedule"
+        options={{
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+          tabBarStyle: { display: 'none' },
+        }}
+      >
+        {({ navigation }) => (
+          <ProviderScheduleScreen onBack={() => navigation.navigate('Dashboard')} onOpenAvailability={() => navigation.navigate('Availability')} />
+        )}
       </Tab.Screen>
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
