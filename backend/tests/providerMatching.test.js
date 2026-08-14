@@ -93,6 +93,20 @@ describe('computeCompatibilityScore', () => {
       breakdown: { location: 100, language: 100, goals: 0 },
     });
   });
+
+  it('matches an ISO language code against the freeform language name a provider actually typed in', () => {
+    const participant = { location: '', language: 'en', goals: [] };
+    const providerProfile = { location: '', languages: ['English', 'Vietnamese'], services: [] };
+
+    expect(computeCompatibilityScore(participant, providerProfile).breakdown.language).toBe(100);
+  });
+
+  it('does not match an unrelated language name against a participant language code', () => {
+    const participant = { location: '', language: 'en', goals: [] };
+    const providerProfile = { location: '', languages: ['Vietnamese'], services: [] };
+
+    expect(computeCompatibilityScore(participant, providerProfile).breakdown.language).toBe(0);
+  });
 });
 
 describe('POST /providers/me/profile', () => {

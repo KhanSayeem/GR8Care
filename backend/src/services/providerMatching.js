@@ -38,13 +38,29 @@ function computeLocationScore(participant, providerProfile) {
   return stringsOverlap(participantLocation, providerProfile?.location) ? 100 : 0;
 }
 
+// participant.language stores an ISO 639-1 code (e.g. "en") while ProviderProfile.languages
+// holds freeform names a provider typed in (e.g. "English") - map the codes this app's UI
+// actually offers so a code and its name are treated as the same language.
+const LANGUAGE_CODE_NAMES = {
+  en: 'english',
+  vi: 'vietnamese',
+  zh: 'mandarin',
+  ar: 'arabic',
+};
+
 function computeLanguageScore(participant, providerProfile) {
   const participantLanguage = normalizeText(participant?.language);
   if (!participantLanguage) return 50;
 
   const languages = Array.isArray(providerProfile?.languages) ? providerProfile.languages : [];
   const target = participantLanguage.toLowerCase();
-  if (languages.some((language) => normalizeText(language).toLowerCase() === target)) return 100;
+  const targetName = LANGUAGE_CODE_NAMES[target];
+  if (languages.some((language) => {
+    const value = normalizeText(language).toLowerCase();
+    return value === target || (targetName && value === targetName);
+  })) {
+    return 100;
+  }
   if (target === 'en' && languages.length === 0) return 100;
   return 0;
 }
