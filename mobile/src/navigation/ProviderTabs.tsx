@@ -46,6 +46,7 @@ export function ProviderTabs() {
             onOpenAvailability={() => navigation.navigate('Availability')}
             onOpenEducation={() => navigation.navigate('Resources')}
             onOpenSchedule={() => navigation.navigate('Schedule')}
+            onOpenTemplates={() => navigation.navigate('Templates')}
           />
         )}
       </Tab.Screen>
