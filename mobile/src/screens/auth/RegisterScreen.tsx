@@ -78,7 +78,10 @@ export function RegisterScreen({ role, language, onRegistered, onSwitchToLogin, 
           <View className="w-full self-center" style={{ maxWidth: 390 }}>
             <Text className="font-heading text-h1 text-text-dark">Create your account</Text>
 
-            <View className="mt-3 flex-row items-center gap-2 self-start rounded-full border border-teal-dark bg-teal-light px-3 py-1.5">
+            <View
+              className="flex-row items-center gap-2 self-start rounded-full border border-teal-dark bg-teal-light px-3 py-1.5"
+              style={{ marginTop: 20 }}
+            >
               <Text className="font-body-medium text-caption text-teal-dark">{ROLE_LABELS[role]}</Text>
               <Pressable accessibilityRole="button" onPress={onChangeRole}>
                 <Text className="font-body-bold text-caption text-teal-dark">Change</Text>
