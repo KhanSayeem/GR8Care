@@ -64,3 +64,28 @@ export async function updateMyProfile(token: string, input: UpdateMyProfileInput
     body: JSON.stringify(input),
   }) as Promise<UpdateMyProfileResponse>;
 }
+
+export type SubscriptionTier = 'starter' | 'growth' | 'enterprise';
+
+export interface SubscriptionFeature {
+  key: string;
+  label: string;
+  requiredTier: SubscriptionTier;
+  enabled: boolean;
+}
+
+export interface SubscriptionAccess {
+  tier: SubscriptionTier;
+  boundary: string;
+  features: SubscriptionFeature[];
+}
+
+export interface MyAccessResponse {
+  access: SubscriptionAccess;
+}
+
+export async function getMyAccess(token: string) {
+  return apiFetch('/users/me/access', {
+    headers: { Authorization: `Bearer ${token}` },
+  }) as Promise<MyAccessResponse>;
+}

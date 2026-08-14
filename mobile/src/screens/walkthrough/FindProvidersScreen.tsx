@@ -8,6 +8,7 @@ import { ScreenShell } from './ScreenShell';
 
 interface FindProvidersScreenProps {
   onSelectProvider: (providerId: string) => void;
+  onOpenZoneOutreach?: () => void;
 }
 
 const LANGUAGE_CHIPS = ['English', 'Vietnamese', 'Mandarin', 'Arabic'];
@@ -68,7 +69,7 @@ function ProviderCard({ provider, onPress }: { provider: ProviderSummary; onPres
   );
 }
 
-export function FindProvidersScreen({ onSelectProvider }: FindProvidersScreenProps) {
+export function FindProvidersScreen({ onSelectProvider, onOpenZoneOutreach }: FindProvidersScreenProps) {
   const [near, setNear] = useState('');
   const [appliedNear, setAppliedNear] = useState('');
   const [language, setLanguage] = useState<string | null>(null);
@@ -205,6 +206,16 @@ export function FindProvidersScreen({ onSelectProvider }: FindProvidersScreenPro
                 className="mt-3 h-10 items-center justify-center rounded-md border border-teal-dark bg-white"
               >
                 <Text className="font-body-bold text-caption text-teal-dark">Expand search to nearby LGAs</Text>
+              </Pressable>
+            ) : null}
+            {onOpenZoneOutreach ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onOpenZoneOutreach}
+                className="items-center justify-center rounded-md border border-border bg-white"
+                style={{ marginTop: 10, height: 40 }}
+              >
+                <Text className="font-body-bold text-caption text-text-dark">Notify nearby providers</Text>
               </Pressable>
             ) : null}
           </Card>
