@@ -14,7 +14,7 @@ export interface ProviderSummary {
   services: string[];
   hourlyRate: number | null;
   acceptingNewParticipants: boolean;
-  abnVerificationStatus: 'unverified' | 'pending' | 'verified';
+  abnVerificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
   rating: number | null;
   compatibilityScore: number | null;
   compatibilityBreakdown: CompatibilityBreakdown | null;
@@ -61,4 +61,31 @@ export async function getProviders(filters: ProviderListFilters = {}) {
 
 export async function getProviderById(id: string) {
   return apiFetch(`/providers/${encodeURIComponent(id)}`) as Promise<ProviderDetailResponse>;
+}
+
+export interface MyProviderProfileResponse {
+  mode: 'providerProfile';
+  boundary: string;
+  profile: ProviderDetail | null;
+}
+
+export interface SaveMyProviderProfileInput {
+  location: string;
+  languages: string[];
+  services: string[];
+  hourlyRate?: number;
+  bio?: string;
+  abn?: string;
+  acceptingNewParticipants: boolean;
+}
+
+export async function getMyProviderProfile() {
+  return apiFetch('/providers/me/profile') as Promise<MyProviderProfileResponse>;
+}
+
+export async function saveMyProviderProfile(input: SaveMyProviderProfileInput) {
+  return apiFetch('/providers/me/profile', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }) as Promise<MyProviderProfileResponse>;
 }

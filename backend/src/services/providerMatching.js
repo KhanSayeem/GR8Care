@@ -307,6 +307,8 @@ function validateProviderProfilePayload(payload) {
   };
 }
 
+const VERIFICATION_RESUBMIT_STATUSES = ['unverified', 'rejected'];
+
 async function saveMyProviderProfile(providerId, payload = {}) {
   const { errors, values } = validateProviderProfilePayload(payload);
   if (errors.length > 0) {
@@ -324,6 +326,15 @@ async function saveMyProviderProfile(providerId, payload = {}) {
   };
   if (values.hourlyRate !== undefined) {
     setFields.hourlyRate = values.hourlyRate;
+  }
+
+  // Submitting an ABN while unverified (or resubmitting after a rejection) is
+  // treated as a verification request, moving the profile into the admin
+  // review queue. Any other status (pending/verified) is left untouched here
+  // - $set never resets an in-review or already-verified profile back down.
+  const existing = await ProviderProfile.findOne({ provider: providerId });
+  if (values.abn && (!existing || VERIFICATION_RESUBMIT_STATUSES.includes(existing.abnVerificationStatus))) {
+    setFields.abnVerificationStatus = 'pending';
   }
 
   // $set (not a whole-document replace) so platform-controlled fields like

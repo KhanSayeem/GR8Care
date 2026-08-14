@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { corsOrigin } = require('./config/env');
+const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const documentTemplateRoutes = require('./routes/documentTemplateRoutes');
@@ -21,6 +22,7 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+app.use('/admin', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/document-templates', documentTemplateRoutes);

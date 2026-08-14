@@ -1,9 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
-import { FundingScreen } from '../screens/walkthrough/FundingScreen';
-import { HomeScreen } from '../screens/walkthrough/HomeScreen';
-import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
+import { AdminDashboardScreen } from '../screens/walkthrough/AdminDashboardScreen';
+import { ProviderVerificationScreen } from '../screens/walkthrough/ProviderVerificationScreen';
+import { ReportsScreen } from '../screens/walkthrough/ReportsScreen';
+import { UserManagementScreen } from '../screens/walkthrough/UserManagementScreen';
 import { tabIcon } from './tabIcons';
 
 export type AdminTabParamList = {
@@ -27,11 +27,21 @@ export function AdminTabs() {
       }}
     >
       <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Overview', tabBarIcon: tabIcon('grid', 'grid-outline') }}>
-        {() => <HomeScreen roleLabel="Coordinator" />}
+        {({ navigation }) => (
+          <AdminDashboardScreen
+            onOpenUsers={() => navigation.navigate('Users')}
+            onOpenVerification={() => navigation.navigate('Verification')}
+            onOpenReports={() => navigation.navigate('Reports')}
+          />
+        )}
       </Tab.Screen>
-      <Tab.Screen name="Users" options={{ tabBarLabel: 'Match', tabBarIcon: tabIcon('people', 'people-outline') }} component={MatchingScreen} />
-      <Tab.Screen name="Verification" options={{ tabBarLabel: 'Funding', tabBarIcon: tabIcon('wallet', 'wallet-outline') }} component={FundingScreen} />
-      <Tab.Screen name="Reports" options={{ tabBarLabel: 'Learn', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
+      <Tab.Screen name="Users" options={{ tabBarLabel: 'Users', tabBarIcon: tabIcon('people', 'people-outline') }} component={UserManagementScreen} />
+      <Tab.Screen
+        name="Verification"
+        options={{ tabBarLabel: 'Verify', tabBarIcon: tabIcon('shield-checkmark', 'shield-checkmark-outline') }}
+        component={ProviderVerificationScreen}
+      />
+      <Tab.Screen name="Reports" options={{ tabBarLabel: 'Reports', tabBarIcon: tabIcon('bar-chart', 'bar-chart-outline') }} component={ReportsScreen} />
     </Tab.Navigator>
   );
 }
