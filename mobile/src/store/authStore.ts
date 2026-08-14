@@ -9,6 +9,10 @@ export interface AuthUser {
   role: Role;
   language: string;
   location?: string;
+  ndisNumber?: string;
+  goals?: string[];
+  notificationsEnabled?: boolean;
+  budgetAlertsEnabled?: boolean;
 }
 
 interface AuthState {
