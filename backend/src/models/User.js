@@ -33,6 +33,7 @@ const userSchema = new mongoose.Schema(
     ndisNumber: { type: String, trim: true },
     goals: [{ type: String }],
     whodasScore: { type: mongoose.Schema.Types.Mixed, default: null },
+    location: { type: String, trim: true, default: '' },
 
     // Provider fields (denormalized pointer; full detail lives in ProviderProfile)
     providerProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'ProviderProfile' },
