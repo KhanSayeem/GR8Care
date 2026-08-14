@@ -1,16 +1,18 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Badge, Button, Card } from '../../components';
-import { providerAvailabilityBlocks } from '../../data/walkthroughData';
+import { AvailabilityBlockRecord, getMyAvailability, saveMyAvailability } from '../../api/providerAvailability';
 import { ScreenShell } from './ScreenShell';
 
-type AvailabilityBlock = (typeof providerAvailabilityBlocks)[number];
+type AvailabilityBlock = AvailabilityBlockRecord;
 
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function createBlock(day: string, index: number): AvailabilityBlock {
   return {
-    id: `${day.toLowerCase()}-${Date.now()}-${index}`,
+    id: `local-${day.toLowerCase()}-${Date.now()}-${index}`,
     day,
     start: '09:00',
     end: '12:00',
@@ -24,31 +26,94 @@ interface SetAvailabilityScreenProps {
 }
 
 export function SetAvailabilityScreen({ onBack }: SetAvailabilityScreenProps) {
-  const [blocks, setBlocks] = useState<AvailabilityBlock[]>(providerAvailabilityBlocks);
-  const [selectedDay, setSelectedDay] = useState(providerAvailabilityBlocks[0]?.day ?? 'Monday');
-  const [saved, setSaved] = useState(false);
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [selectedDay, setSelectedDay] = useState('Monday');
+  const [dirty, setDirty] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const loadAvailability = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+
+    try {
+      const res = await getMyAvailability();
+      setBlocks(res.availability.blocks);
+      setDirty(false);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Availability could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAvailability();
+    }, [loadAvailability])
+  );
 
   const selectedBlocks = useMemo(() => blocks.filter((block) => block.day === selectedDay), [blocks, selectedDay]);
   const availableBlockCount = blocks.filter((block) => block.enabled).length;
 
   const updateBlock = (id: string, patch: Partial<AvailabilityBlock>) => {
-    setSaved(false);
+    setDirty(true);
     setBlocks((current) => current.map((block) => (block.id === id ? { ...block, ...patch } : block)));
   };
 
   const addBlock = () => {
-    setSaved(false);
+    setDirty(true);
     setBlocks((current) => [...current, createBlock(selectedDay, current.length + 1)]);
   };
 
   const removeBlock = (id: string) => {
-    setSaved(false);
+    setDirty(true);
     setBlocks((current) => current.filter((block) => block.id !== id));
   };
 
-  const saveAvailability = () => {
-    setSaved(true);
+  const saveAvailability = async () => {
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      const res = await saveMyAvailability(
+        blocks.map(({ day, start, end, service, enabled }) => ({ day, start, end, service, enabled }))
+      );
+      setBlocks(res.availability.blocks);
+      setDirty(false);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Availability could not be saved.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <ScreenShell eyebrow="Provider schedule" title="Set availability" subtitle="Loading your availability...">
+        <View className="items-center justify-center gap-2 py-10">
+          <ActivityIndicator color="#0B4F6C" />
+        </View>
+      </ScreenShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ScreenShell eyebrow="Provider schedule" title="Set availability" subtitle="Choose the days and time blocks participants can request.">
+        {onBack ? <Button label="Back to home" variant="outline" onPress={onBack} /> : null}
+        <View className="items-center justify-center gap-2 py-6">
+          <Ionicons name="alert-circle" color="#E53E3E" size={22} />
+          <Text className="font-body-medium text-caption text-text-dark text-center">{loadError}</Text>
+          <View className="mt-2 w-32">
+            <Button label="Retry" variant="primary" onPress={loadAvailability} />
+          </View>
+        </View>
+      </ScreenShell>
+    );
+  }
 
   return (
     <ScreenShell
@@ -67,7 +132,7 @@ export function SetAvailabilityScreen({ onBack }: SetAvailabilityScreenProps) {
               Toggle blocks off when you are unavailable, or add a new block for the selected day.
             </Text>
           </View>
-          <Badge label={saved ? 'Saved' : 'Draft'} tone={saved ? 'success' : 'warning'} />
+          <Badge label={dirty ? 'Unsaved' : 'Saved'} tone={dirty ? 'warning' : 'success'} />
         </View>
       </Card>
 
@@ -185,7 +250,20 @@ export function SetAvailabilityScreen({ onBack }: SetAvailabilityScreenProps) {
         </Text>
       </Card>
 
-      <Button label={saved ? 'Availability saved' : 'Save availability'} variant="primary" onPress={saveAvailability} />
+      {saveError ? (
+        <View className="flex-row items-center gap-2 rounded-md border border-[#E53E3E] bg-[#FED7D7] px-3 py-2.5">
+          <Ionicons name="alert-circle" color="#E53E3E" size={18} />
+          <Text className="flex-1 font-body-medium text-caption text-[#E53E3E]">{saveError}</Text>
+        </View>
+      ) : null}
+
+      <Button
+        label={dirty ? 'Save availability' : 'Availability saved'}
+        variant="primary"
+        loading={saving}
+        disabled={blocks.length === 0}
+        onPress={saveAvailability}
+      />
     </ScreenShell>
   );
 }
