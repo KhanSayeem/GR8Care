@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* The Tailwind theme maps font-* utilities to Android font aliases
+   ("sans-serif-medium"), which native resolves but browsers do not - they fall
+   back to serif. Remap them to a web stack.
+
+   These are deliberately plain rules rather than @layer utilities: Tailwind
+   purges unused layer content, which dropped several of these entirely. Plain
+   CSS after the directives is always emitted and wins on source order.
+
+   This file is only imported on web (see src/globalStyles.web.ts), so native
+   font resolution is untouched. */
+.font-display,
+.font-heading,
+.font-subheading,
+.font-body-medium,
+.font-body-bold,
+.font-caption {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+}
+
+.font-body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+}
+
+/* Expo's web reset sets `body { overflow: hidden }` on the assumption every
+   screen scrolls through its own ScrollView. Splash, language and role
+   selection are plain flex screens - correct on a phone, where they always
+   fit - so in a short browser window their content was clipped with no way to
+   reach it. Let the body scroll to reveal that overflow.
+
+   #root keeps its 100% height on purpose: screens that DO use a ScrollView
+   need a bounded parent to scroll internally, and switching it to auto height
+   would break them. */
+body {
+  overflow-y: auto;
+}

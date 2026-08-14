@@ -8,6 +8,8 @@
     "android:centered": "node ./scripts/run-android-centered.js",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build:web": "expo export -p web && node ./scripts/fix-web-export-assets.js",
+    "deploy:web": "npm run build:web && wrangler pages deploy dist --project-name=gr8care-demo --commit-dirty=true",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src App.tsx",
     "test": "jest"
   },
