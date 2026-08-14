@@ -16,7 +16,7 @@ const providerProfileSchema = new mongoose.Schema(
     bio: { type: String, default: '', trim: true },
     acceptingNewParticipants: { type: Boolean, default: true },
     abn: { type: String, trim: true, default: '' },
-    abnVerificationStatus: { type: String, enum: ['unverified', 'pending', 'verified'], default: 'unverified' },
+    abnVerificationStatus: { type: String, enum: ['unverified', 'pending', 'verified', 'rejected'], default: 'unverified' },
     rating: { type: Number, min: 0, max: 5, default: null },
   },
   { timestamps: true }

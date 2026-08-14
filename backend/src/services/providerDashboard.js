@@ -1,4 +1,5 @@
 const ProviderAvailability = require('../models/ProviderAvailability');
+const ProviderProfile = require('../models/ProviderProfile');
 const { getTierAccess } = require('./subscriptionAccess');
 const { PROVIDER_AVAILABILITY_BOUNDARY } = require('./providerAvailability');
 
@@ -123,7 +124,10 @@ async function getProviderSchedule(providerId, { date, range = 'this-week' } = {
 }
 
 async function getProviderStats(provider) {
-  const availability = await getAvailabilityForProvider(provider._id);
+  const [availability, profile] = await Promise.all([
+    getAvailabilityForProvider(provider._id),
+    ProviderProfile.findOne({ provider: provider._id }),
+  ]);
   const blocks = availability?.blocks || [];
   const activeAvailabilityBlocks = blocks.filter((block) => block.enabled).length;
   const tierAccess = getTierAccess(provider.subscriptionTier);
@@ -134,13 +138,13 @@ async function getProviderStats(provider) {
     stats: {
       providerId: String(provider._id),
       displayName: provider.fullName,
-      verified: false,
+      verified: profile?.abnVerificationStatus === 'verified',
       subscriptionTier: provider.subscriptionTier,
       subscriptionAccess: tierAccess,
       sessionsToday: 0,
       sessionsThisWeek: 0,
       earningsThisWeek: 0,
-      rating: null,
+      rating: profile?.rating ?? null,
       availabilityBlocks: blocks.length,
       activeAvailabilityBlocks,
       lastAvailabilityUpdate: availability?.updatedAt || null,

@@ -5,8 +5,8 @@ import { DemandSignalScreen } from '../screens/walkthrough/DemandSignalScreen';
 import { DocumentTemplatesScreen } from '../screens/walkthrough/DocumentTemplatesScreen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
-import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 import { ProviderBookingDetailScreen } from '../screens/walkthrough/ProviderBookingDetailScreen';
+import { ProviderProfileSettingsScreen } from '../screens/walkthrough/ProviderProfileSettingsScreen';
 import { ProviderScheduleScreen } from '../screens/walkthrough/ProviderScheduleScreen';
 import { SetAvailabilityScreen } from '../screens/walkthrough/SetAvailabilityScreen';
 import { WellnessScreen } from '../screens/walkthrough/WellnessScreen';
@@ -112,7 +112,11 @@ export function ProviderTabs() {
       <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }} component={EducationLibraryScreen} />
       <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
       <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
-      <Tab.Screen name="Settings" options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }} component={ProfileScreen} />
+      <Tab.Screen
+        name="Settings"
+        options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }}
+        component={ProviderProfileSettingsScreen}
+      />
     </Tab.Navigator>
   );
 }
