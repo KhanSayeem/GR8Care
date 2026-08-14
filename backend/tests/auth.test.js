@@ -100,6 +100,25 @@ describe('Auth API', () => {
     expect(res.body.error).toBe('Unsupported role');
   });
 
+  it('refuses to let anyone register themselves as an admin', async () => {
+    const res = await request(app)
+      .post('/auth/register')
+      .send({
+        fullName: 'Privilege Escalation',
+        email: 'self-made-admin@example.com',
+        password: 'supersecret',
+        role: 'admin',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Unsupported role');
+
+    const stored = await mongoose.connection
+      .collection('users')
+      .findOne({ email: 'self-made-admin@example.com' });
+    expect(stored).toBeNull();
+  });
+
   it('rejects duplicate registration', async () => {
     const res = await request(app).post('/auth/register').send(credentials);
     expect(res.status).toBe(409);

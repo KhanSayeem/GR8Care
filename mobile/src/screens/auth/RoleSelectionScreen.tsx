@@ -45,16 +45,9 @@ const ROLE_OPTIONS: Array<{
     border: '#E87E49',
     accent: '#A9491C',
   },
-  {
-    role: 'admin',
-    label: 'Admin / Staff',
-    description: 'GR8Care staff managing the platform',
-    icon: 'settings',
-    iconBg: 'rgba(45,27,105,0.15)',
-    bg: '#EDE9FF',
-    border: '#2D1B69',
-    accent: '#2D1B69',
-  },
+  // No Admin / Staff option on purpose: admin accounts are seeded by staff via
+  // backend/scripts/create-admin.js and the register endpoint rejects the admin
+  // role, so offering it here would only produce a failed signup.
 ];
 
 interface RoleSelectionScreenProps {

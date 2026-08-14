@@ -49,8 +49,20 @@ function saveMyProfile(token, payload) {
     .send(payload);
 }
 
+// Admins cannot be created through /auth/register - that endpoint rejects the
+// admin role so nobody can grant it to themselves. Seed one the same way
+// scripts/create-admin.js does, then log in for a token.
 async function registerAdmin(email = 'admin@example.com') {
-  return registerUser('admin', email, { fullName: 'Admin User' });
+  await User.create({
+    fullName: 'Admin User',
+    email,
+    password: 'supersecret',
+    role: 'admin',
+    language: 'en',
+  });
+
+  const res = await request(app).post('/auth/login').send({ email, password: 'supersecret' });
+  return res.body;
 }
 
 describe('GET /admin/stats', () => {
