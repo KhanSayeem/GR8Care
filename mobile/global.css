@@ -39,3 +39,30 @@
 body {
   overflow-y: auto;
 }
+
+/* This is a phone app, so on a desktop browser render it inside a phone-sized
+   frame rather than stretching edge to edge. Without this the bottom tab bar
+   spans the full viewport while every screen's content sits in a 390px centred
+   column, which reads as broken.
+   Constraining #root fixes all three tab navigators at once and needs no
+   changes to the shared native components.
+   Below 480px (real phones) the frame is skipped so the app fills the screen. */
+@media (min-width: 480px) {
+  body {
+    box-sizing: border-box;
+    padding: 16px 0;
+    background-color: #e8e0d6;
+  }
+
+  #root {
+    max-width: 430px;
+    margin: 0 auto;
+    /* Scrolls here rather than on the viewport so overflow stays inside the
+       frame and clips to the rounded corners. */
+    overflow-y: auto;
+    background-color: #f7f3ee;
+    border: 1px solid #d8cec1;
+    border-radius: 22px;
+    box-shadow: 0 6px 28px rgba(11, 79, 108, 0.13);
+  }
+}
