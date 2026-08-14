@@ -15,6 +15,7 @@ interface HomeScreenProps {
   onOpenNotifications?: () => void;
   onOpenBooking?: () => void;
   onOpenBookings?: () => void;
+  onOpenSchedule?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -28,6 +29,7 @@ interface QuickAction {
   educationShortcut?: boolean;
   availabilityShortcut?: boolean;
   bookingShortcut?: boolean;
+  scheduleShortcut?: boolean;
 }
 
 const participantQuickActions: QuickAction[] = [
@@ -39,6 +41,7 @@ const participantQuickActions: QuickAction[] = [
 
 const providerQuickActions: QuickAction[] = [
   { title: 'Set Availability', subtitle: 'Time blocks', icon: 'calendar', color: '#0B4F6C', bg: '#D0EAF2', availabilityShortcut: true },
+  { title: 'My Schedule', subtitle: 'Upcoming sessions', icon: 'time', color: '#E8734A', bg: '#FFF1EA', scheduleShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
   { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
@@ -114,6 +117,7 @@ export function HomeScreen({
   onOpenNotifications,
   onOpenBooking,
   onOpenBookings,
+  onOpenSchedule,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -326,7 +330,17 @@ export function HomeScreen({
               <QuickActionCard
                 key={action.title}
                 {...action}
-                onPress={action.educationShortcut ? onOpenEducation : action.availabilityShortcut ? onOpenAvailability : action.bookingShortcut ? onOpenBooking : undefined}
+                onPress={
+                  action.educationShortcut
+                    ? onOpenEducation
+                    : action.availabilityShortcut
+                      ? onOpenAvailability
+                      : action.bookingShortcut
+                        ? onOpenBooking
+                        : action.scheduleShortcut
+                          ? onOpenSchedule
+                          : undefined
+                }
               />
             ))}
           </View>
