@@ -84,3 +84,54 @@ export async function createBooking(input: CreateBookingInput) {
     throw err;
   }
 }
+
+export type BookingWindow = 'upcoming' | 'past' | 'all';
+
+export interface BookingListResponse {
+  mode: 'bookings';
+  boundary: string;
+  filter: { window: BookingWindow; status: string | null; asOf: string };
+  bookings: BookingRecord[];
+}
+
+export interface UserSummary {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+  goals: string[];
+}
+
+export interface BookingDetailRecord extends BookingRecord {
+  participant: UserSummary | null;
+  provider: UserSummary | null;
+  supportWorker: UserSummary | null;
+}
+
+export interface BookingDetailResponse {
+  mode: 'bookingDetail';
+  boundary: string;
+  booking: BookingDetailRecord;
+}
+
+export interface CancelBookingResponse {
+  mode: 'bookingCancelled';
+  boundary: string;
+  booking: BookingRecord;
+}
+
+export async function getBookings(window: BookingWindow = 'upcoming') {
+  const params = new URLSearchParams({ window });
+  return apiFetch(`/bookings?${params.toString()}`) as Promise<BookingListResponse>;
+}
+
+export async function getBookingDetail(id: string) {
+  return apiFetch(`/bookings/${encodeURIComponent(id)}`) as Promise<BookingDetailResponse>;
+}
+
+export async function cancelBooking(id: string, reason?: string) {
+  return apiFetch(`/bookings/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason: reason ?? 'Cancelled by participant' }),
+  }) as Promise<CancelBookingResponse>;
+}
