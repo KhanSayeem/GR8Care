@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { Alert, Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { updateMyProfile } from '../../api/auth';
-import { Badge, Button, Card } from '../../components';
-import { subscriptionAccessTiers } from '../../data/walkthroughData';
+import { Button, Card } from '../../components';
 import { useAuthStore } from '../../store/authStore';
 import { LanguagePreferenceScreen } from './LanguagePreferenceScreen';
 import { PersonalInformationScreen } from './PersonalInformationScreen';
 import { ScreenShell } from './ScreenShell';
+import { SubscriptionScreen } from './SubscriptionScreen';
 import { WhodasAssessmentScreen } from './WhodasAssessmentScreen';
 
-type ProfileView = 'main' | 'personalInfo' | 'whodas' | 'language';
+type ProfileView = 'main' | 'personalInfo' | 'whodas' | 'language' | 'subscription';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -95,6 +95,10 @@ export function ProfileScreen() {
     return <WhodasAssessmentScreen onBack={() => setView('main')} />;
   }
 
+  if (view === 'subscription') {
+    return <SubscriptionScreen onBack={() => setView('main')} />;
+  }
+
   if (view === 'language' && token && user) {
     return (
       <LanguagePreferenceScreen
@@ -128,6 +132,7 @@ export function ProfileScreen() {
       <SettingsRow icon="flag" title="My NDIS Goals" subtitle={goalsSummary} onPress={() => setView('personalInfo')} />
       <SettingsRow icon="clipboard" title="WHODAS Assessment" subtitle="Pending client confirmation" onPress={() => setView('whodas')} />
       <SettingsRow icon="language" title="Language" subtitle={languageLabel} onPress={() => setView('language')} />
+      <SettingsRow icon="ribbon" title="Subscription & Plan" subtitle="View your plan and features" onPress={() => setView('subscription')} />
 
       <Card style={{ marginTop: 16 }}>
         <View className="flex-row items-center justify-between gap-3">
@@ -160,30 +165,6 @@ export function ProfileScreen() {
             trackColor={{ false: '#E8E0D6', true: '#0B4F6C' }}
             thumbColor="#FFFFFF"
           />
-        </View>
-      </Card>
-
-      <Card variant="highlight" style={{ marginTop: 16 }}>
-        <View className="flex-row flex-wrap items-start justify-between gap-2">
-          <View className="flex-1">
-            <Text className="font-caption text-label uppercase text-teal-dark">Subscription access</Text>
-            <Text className="mt-2 font-heading text-h2 text-text-dark">Permission gating only</Text>
-          </View>
-          <Badge label="No payments" tone="info" />
-        </View>
-        <Text className="mt-2 font-body text-body text-text-mid">
-          Tiers unlock walkthrough features only. Pricing waits for the decision issue, and this app does not collect cards, banking details, or process payments.
-        </Text>
-        <View className="mt-4 gap-3">
-          {subscriptionAccessTiers.map((tier) => (
-            <View key={tier.tier} className="rounded-md border border-border bg-white p-3">
-              <View className="flex-row flex-wrap items-start justify-between gap-2">
-                <Text className="font-body-medium text-caption text-text-dark">{tier.tier}</Text>
-                <Badge label={tier.enabled ? 'Enabled' : 'Later'} tone={tier.enabled ? 'success' : 'neutral'} />
-              </View>
-              <Text className="mt-1 font-body text-caption text-text-mid">{tier.summary}</Text>
-            </View>
-          ))}
         </View>
       </Card>
 

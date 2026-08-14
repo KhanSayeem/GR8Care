@@ -15,6 +15,7 @@ import { MyBookingsScreen } from '../screens/walkthrough/MyBookingsScreen';
 import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 import { ProviderProfileScreen } from '../screens/walkthrough/ProviderProfileScreen';
+import { ZoneOutreachScreen } from '../screens/walkthrough/ZoneOutreachScreen';
 import { BookingDetailRecord } from '../api/booking';
 import { BookingDraft, ServiceSelection, ScheduleSelection } from '../types/bookingDraft';
 
@@ -32,7 +33,8 @@ type TabKey =
   | 'bookConfirm'
   | 'bookings'
   | 'aiBot'
-  | 'tracking';
+  | 'tracking'
+  | 'zoneOutreach';
 
 const tabs: Array<{
   key: TabKey;
@@ -64,7 +66,9 @@ export function ParticipantTabs() {
   const [bookingProviderId, setBookingProviderId] = useState<string | undefined>(undefined);
   const [trackingBooking, setTrackingBooking] = useState<BookingDetailRecord | null>(null);
   const insets = useSafeAreaInsets();
-  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile', 'aiBot', 'tracking'].includes(activeTab);
+  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile', 'aiBot', 'tracking', 'zoneOutreach'].includes(
+    activeTab
+  );
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -75,8 +79,11 @@ export function ParticipantTabs() {
               setSelectedProviderId(providerId);
               setActiveTab('providerProfile');
             }}
+            onOpenZoneOutreach={() => setActiveTab('zoneOutreach')}
           />
         );
+      case 'zoneOutreach':
+        return <ZoneOutreachScreen onBack={() => setActiveTab('match')} />;
       case 'providerProfile':
         return selectedProviderId ? (
           <ProviderProfileScreen

@@ -8,8 +8,9 @@ import { BusinessProfileScreen } from './BusinessProfileScreen';
 import { LanguagePreferenceScreen } from './LanguagePreferenceScreen';
 import { ScreenShell } from './ScreenShell';
 import { SetAvailabilityScreen } from './SetAvailabilityScreen';
+import { SubscriptionScreen } from './SubscriptionScreen';
 
-type SettingsView = 'main' | 'businessProfile' | 'availability' | 'language';
+type SettingsView = 'main' | 'businessProfile' | 'availability' | 'language' | 'subscription';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -84,6 +85,10 @@ export function ProviderProfileSettingsScreen() {
     return <SetAvailabilityScreen onBack={() => setView('main')} />;
   }
 
+  if (view === 'subscription') {
+    return <SubscriptionScreen onBack={() => setView('main')} />;
+  }
+
   if (view === 'language' && token && user) {
     return (
       <LanguagePreferenceScreen
@@ -110,6 +115,7 @@ export function ProviderProfileSettingsScreen() {
       <SettingsRow icon="briefcase" title="Business Profile" subtitle="Location, services, languages, and rate" onPress={() => setView('businessProfile')} />
       <SettingsRow icon="calendar" title="Set Availability" subtitle="Time blocks for participant bookings" onPress={() => setView('availability')} />
       <SettingsRow icon="language" title="Language" subtitle={languageLabel} onPress={() => setView('language')} />
+      <SettingsRow icon="ribbon" title="Subscription & Plan" subtitle="View your plan and features" onPress={() => setView('subscription')} />
 
       <Card style={{ marginTop: 16 }}>
         <View className="flex-row items-center justify-between gap-3">
