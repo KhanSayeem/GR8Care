@@ -55,6 +55,16 @@ function getRefId(value) {
   return value?._id ? String(value._id) : String(value);
 }
 
+function serializeUserSummary(user) {
+  if (!user || !user._id) return null;
+  return {
+    id: String(user._id),
+    displayName: user.fullName,
+    email: user.email,
+    role: user.role,
+  };
+}
+
 function assertInstantRequester(user, participantId) {
   if (!['participant', 'caregiver', 'admin'].includes(user.role)) {
     throw forbidden('Only participants, caregivers, or admins can send instant requests');
@@ -88,6 +98,7 @@ function serializeInstantRequest(request) {
   return {
     id: String(request._id),
     participantId: getRefId(request.participant),
+    participant: serializeUserSummary(request.participant),
     requestedById: getRefId(request.requestedBy),
     preferredProviderId: request.preferredProvider ? getRefId(request.preferredProvider) : null,
     title: request.title,
@@ -188,7 +199,10 @@ async function listInstantRequests(user, filters = {}) {
     query.status = { $in: INSTANT_REQUEST_PAST_STATUSES };
   }
 
-  let requests = await ServiceRequest.find(query).sort({ createdAt: -1 }).limit(100);
+  let requests = await ServiceRequest.find(query)
+    .populate('participant', 'fullName email role')
+    .sort({ createdAt: -1 })
+    .limit(100);
 
   const staleIds = requests
     .filter((request) => isExpired(request, asOf))
