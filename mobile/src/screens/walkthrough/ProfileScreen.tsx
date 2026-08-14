@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { Badge, Button, Card } from '../../components';
 import { subscriptionAccessTiers } from '../../data/walkthroughData';
 import { useAuthStore } from '../../store/authStore';
@@ -7,18 +7,20 @@ import { ScreenShell } from './ScreenShell';
 
 export function ProfileScreen() {
   const signOut = useAuthStore((state) => state.signOut);
+  const user = useAuthStore((state) => state.user);
+
+  function confirmSignOut() {
+    Alert.alert('Sign out?', "You'll need to log in again to access your account.", [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: signOut },
+    ]);
+  }
 
   return (
-    <ScreenShell
-      eyebrow="Account"
-      title="Walkthrough controls"
-      subtitle="Switch roles to present participant, support worker, and coordination perspectives from the same browser session."
-    >
+    <ScreenShell eyebrow="Account" title="Profile" subtitle="Manage your account and preferences.">
       <Card>
-        <Text className="font-heading text-h2 text-text-dark">Current session</Text>
-        <Text className="mt-2 font-body text-body text-text-mid">
-          Seeded classroom data is used here so the frontend can run without backend services during presentation.
-        </Text>
+        <Text className="font-heading text-h2 text-text-dark">{user?.fullName ?? 'Your account'}</Text>
+        <Text className="mt-2 font-body text-body text-text-mid">{user?.email}</Text>
       </Card>
 
       <Card variant="highlight">
@@ -46,7 +48,7 @@ export function ProfileScreen() {
       </Card>
 
       <View className="mt-2">
-        <Button label="Switch role" variant="outline" onPress={signOut} />
+        <Button label="Sign out" variant="outline" onPress={confirmSignOut} />
       </View>
     </ScreenShell>
   );

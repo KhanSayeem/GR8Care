@@ -1,272 +1,127 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { API_BASE_URL } from '../../api/client';
-import { Role, useAuthStore } from '../../store/authStore';
+import { ApiError } from '../../api/client';
+import { login } from '../../api/auth';
+import { AuthUser } from '../../store/authStore';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-const ROLE_OPTIONS: Array<{
-  role: Role;
-  label: string;
-  description: string;
-  email: string;
-  icon: IoniconName;
-  iconBg: string;
-  bg: string;
-  border: string;
-  accent: string;
-}> = [
-  {
-    role: 'participant',
-    label: 'Participant',
-    description: 'NDIS participant or caregiver managing services and funding',
-    email: 'participant@gr8care.app',
-    icon: 'person',
-    iconBg: 'rgba(11,79,108,0.15)',
-    bg: '#D0EAF2',
-    border: '#0B4F6C',
-    accent: '#0B4F6C',
-  },
-  {
-    role: 'supportWorker',
-    label: 'Support Worker',
-    description: 'Worker delivering participant supports and recording service notes',
-    email: 'worker@gr8care.app',
-    icon: 'medical',
-    iconBg: 'rgba(45,158,107,0.15)',
-    bg: '#D4F0E4',
-    border: '#2D9E6B',
-    accent: '#2D9E6B',
-  },
-  {
-    role: 'provider',
-    label: 'Provider',
-    description: 'Organisation coordinating workers, services, and participant support',
-    email: 'provider@gr8care.app',
-    icon: 'business',
-    iconBg: 'rgba(232,126,73,0.15)',
-    bg: '#FCE6DA',
-    border: '#E87E49',
-    accent: '#A9491C',
-  },
-  {
-    role: 'admin',
-    label: 'Admin / Staff',
-    description: 'GR8Care staff managing the platform',
-    email: 'coordinator@gr8care.app',
-    icon: 'settings',
-    iconBg: 'rgba(45,27,105,0.15)',
-    bg: '#EDE9FF',
-    border: '#2D1B69',
-    accent: '#2D1B69',
-  },
-];
-
-const WALKTHROUGH_PASSWORD = 'walkthrough-secret';
-
-async function fetchSession(path: '/auth/register' | '/auth/login', body: Record<string, string>) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const payload = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(payload.error || `Request failed with status ${res.status}`);
-  }
-
-  return payload as { token: string; user: { _id: string; fullName: string; email: string; role: Role; language: string } };
+interface LoginScreenProps {
+  onLoggedIn: (token: string, user: AuthUser) => void;
+  onSwitchToRegister: () => void;
 }
 
-export function LoginScreen() {
-  const setSession = useAuthStore((state) => state.setSession);
-  const [loadingRole, setLoadingRole] = useState<Role | null>(null);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function LoginScreen({ onLoggedIn, onSwitchToRegister }: LoginScreenProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startWalkthroughSession = async (option: (typeof ROLE_OPTIONS)[number]) => {
-    setLoadingRole(option.role);
+  async function handleSubmit() {
+    const trimmedEmail = email.trim();
+
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+
+    setSubmitting(true);
     setError(null);
 
     try {
-      const credentials = {
-        fullName: option.label,
-        email: option.email,
-        password: WALKTHROUGH_PASSWORD,
-        role: option.role,
-        language: 'en',
-        ...(option.role === 'provider' ? { subscriptionTier: 'growth' } : {}),
-      };
-
-      let session;
-      try {
-        session = await fetchSession('/auth/register', credentials);
-      } catch (err) {
-        if (!(err instanceof Error) || !err.message.includes('already exists')) {
-          throw err;
-        }
-        session = await fetchSession('/auth/login', {
-          email: option.email,
-          password: WALKTHROUGH_PASSWORD,
-        });
-      }
-
-      setSession(session.token, session.user);
+      const session = await login({ email: trimmedEmail, password });
+      onLoggedIn(session.token, session.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start walkthrough session.');
+      if (err instanceof ApiError && err.status === 401) {
+        setError('Incorrect email or password.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Could not log in.');
+      }
     } finally {
-      setLoadingRole(null);
+      setSubmitting(false);
     }
-  };
+  }
 
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F7F3EE" />
-      <View style={styles.screen}>
-        <View style={styles.phoneFrame}>
-        <View style={styles.headingBlock}>
-          <Text style={styles.titleDark}>Who are</Text>
-          <Text style={styles.titleTeal}>you?</Text>
-          <Text style={styles.subtitle}>Select your role to get the right experience</Text>
-        </View>
+      <KeyboardAvoidingView className="flex-1 bg-cream" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 32 }}>
+          <View className="w-full self-center" style={{ maxWidth: 390 }}>
+            <Text className="font-heading text-h1 text-text-dark">Welcome back</Text>
+            <Text className="mt-2 font-body text-body text-text-mid">Log in with your email and password.</Text>
 
-        <View style={styles.roleList}>
-          {ROLE_OPTIONS.map((option) => (
+            <View className="mt-8 gap-4">
+              <View>
+                <Text className="mb-1.5 font-caption text-label uppercase text-text-mid">Email</Text>
+                <TextInput
+                  accessibilityLabel="Email"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor="#A0AEC0"
+                  value={email}
+                  className="h-14 rounded-md border border-border bg-white px-4 font-body text-body text-text-dark"
+                />
+              </View>
+
+              <View>
+                <Text className="mb-1.5 font-caption text-label uppercase text-text-mid">Password</Text>
+                <View className="flex-row items-center rounded-md border border-border bg-white">
+                  <TextInput
+                    accessibilityLabel="Password"
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    onChangeText={setPassword}
+                    placeholder="Your password"
+                    placeholderTextColor="#A0AEC0"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    className="h-14 flex-1 px-4 font-body text-body text-text-dark"
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    className="h-14 w-12 items-center justify-center"
+                  >
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} color="#4A5568" size={20} />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+
+            {error ? (
+              <View className="mt-4 flex-row items-center gap-2 rounded-md border border-[#E53E3E] bg-[#FED7D7] px-3 py-2.5">
+                <Ionicons name="alert-circle" color="#E53E3E" size={18} />
+                <Text className="flex-1 font-body-medium text-caption text-[#E53E3E]">{error}</Text>
+              </View>
+            ) : null}
+
             <Pressable
-              key={option.role}
               accessibilityRole="button"
-              accessibilityState={{ disabled: loadingRole !== null }}
-              disabled={loadingRole !== null}
-              onPress={() => startWalkthroughSession(option)}
-              style={[styles.roleCard, { backgroundColor: option.bg, borderColor: option.border }]}
+              accessibilityState={{ disabled: submitting }}
+              disabled={submitting}
+              onPress={handleSubmit}
+              className={`mt-6 h-14 flex-row items-center justify-center rounded-md bg-teal-dark px-4 ${submitting ? 'opacity-50' : ''}`}
             >
-              <View style={[styles.roleIcon, { backgroundColor: option.iconBg }]}>
-                <Ionicons name={option.icon} color={option.accent} size={30} />
-              </View>
-              <View style={styles.roleCopy}>
-                <Text style={styles.roleTitle}>{option.label}</Text>
-                <Text style={styles.roleDescription}>{option.description}</Text>
-              </View>
-              {loadingRole === option.role ? <ActivityIndicator color={option.accent} /> : <Ionicons name="chevron-forward" color={option.accent} size={20} />}
+              {submitting ? <ActivityIndicator color="#F7F3EE" /> : <Text className="font-subheading text-h3 text-cream">Log in</Text>}
             </Pressable>
-          ))}
-        </View>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Ionicons name="alert-circle" color="#E53E3E" size={18} />
-            <Text style={styles.errorText}>{error}</Text>
+            <Pressable accessibilityRole="button" onPress={onSwitchToRegister} className="mt-5 items-center py-2">
+              <Text className="font-body-medium text-body text-teal-dark">Don't have an account? Register</Text>
+            </Pressable>
           </View>
-        ) : null}
-
-        <Text style={styles.changeLanguage}>Change language</Text>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#F7F3EE',
-    alignItems: 'center',
-  },
-  phoneFrame: {
-    width: '100%',
-    maxWidth: 390,
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 62,
-  },
-  headingBlock: {
-    marginTop: 0,
-  },
-  titleDark: {
-    color: '#1A1A2E',
-    fontSize: 30,
-    lineHeight: 38,
-    fontWeight: '800',
-  },
-  titleTeal: {
-    color: '#0B4F6C',
-    fontSize: 30,
-    lineHeight: 38,
-    fontWeight: '800',
-  },
-  subtitle: {
-    marginTop: 6,
-    color: '#A0AEC0',
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  roleList: {
-    marginTop: 24,
-    gap: 14,
-  },
-  roleCard: {
-    minHeight: 92,
-    borderRadius: 20,
-    borderWidth: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    shadowColor: '#0A4F6B',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  roleIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleCopy: {
-    flex: 1,
-    marginLeft: 14,
-    paddingRight: 8,
-  },
-  roleTitle: {
-    color: '#1A1A2E',
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: '700',
-  },
-  roleDescription: {
-    marginTop: 6,
-    color: '#4A5568',
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  changeLanguage: {
-    marginTop: 48,
-    color: '#A0AEC0',
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  errorBox: {
-    marginTop: 16,
-    minHeight: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E53E3E',
-    backgroundColor: '#FED7D7',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-  },
-  errorText: {
-    flex: 1,
-    color: '#E53E3E',
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
-  },
-});
