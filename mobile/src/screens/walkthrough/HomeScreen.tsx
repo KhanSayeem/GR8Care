@@ -16,6 +16,7 @@ interface HomeScreenProps {
   onOpenBooking?: () => void;
   onOpenBookings?: () => void;
   onOpenSchedule?: () => void;
+  onOpenTemplates?: () => void;
 }
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
@@ -30,6 +31,7 @@ interface QuickAction {
   availabilityShortcut?: boolean;
   bookingShortcut?: boolean;
   scheduleShortcut?: boolean;
+  templatesShortcut?: boolean;
 }
 
 const participantQuickActions: QuickAction[] = [
@@ -44,7 +46,7 @@ const providerQuickActions: QuickAction[] = [
   { title: 'My Schedule', subtitle: 'Upcoming sessions', icon: 'time', color: '#E8734A', bg: '#FFF1EA', scheduleShortcut: true },
   { title: 'Resources', subtitle: 'NDIS categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#E8734A', bg: '#FFF1EA', educationShortcut: true },
-  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4' },
+  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D9E6B', bg: '#D4F0E4', templatesShortcut: true },
   { title: 'Workforce', subtitle: 'Practice prompts', icon: 'briefcase', color: '#2D1B69', bg: '#EDE9FF' },
 ];
 
@@ -53,7 +55,7 @@ const supportWorkerQuickActions: QuickAction[] = [
   { title: 'Wellness', subtitle: 'Simple reset', icon: 'heart', color: '#E8734A', bg: '#FFF1EA' },
   { title: 'NDIS Education Library', subtitle: 'Plain-language guides', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Knowledge Agent', subtitle: 'Cited answers', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', educationShortcut: true },
-  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D1B69', bg: '#EDE9FF' },
+  { title: 'Templates', subtitle: 'Examples only', icon: 'document-text', color: '#2D1B69', bg: '#EDE9FF', templatesShortcut: true },
 ];
 
 const providerSectionCopy: Record<ProviderSection, { title: string; description: string }> = {
@@ -118,6 +120,7 @@ export function HomeScreen({
   onOpenBooking,
   onOpenBookings,
   onOpenSchedule,
+  onOpenTemplates,
 }: HomeScreenProps) {
   const [providerStats, setProviderStats] = useState<ProviderStats | null>(null);
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
@@ -339,7 +342,9 @@ export function HomeScreen({
                         ? onOpenBooking
                         : action.scheduleShortcut
                           ? onOpenSchedule
-                          : undefined
+                          : action.templatesShortcut
+                            ? onOpenTemplates
+                            : undefined
                 }
               />
             ))}
