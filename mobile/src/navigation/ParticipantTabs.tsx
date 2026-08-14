@@ -6,18 +6,20 @@ import { BookServiceStep1Screen } from '../screens/walkthrough/BookServiceStep1S
 import { BookServiceStep2Screen } from '../screens/walkthrough/BookServiceStep2Screen';
 import { BookServiceStep3Screen } from '../screens/walkthrough/BookServiceStep3Screen';
 import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryScreen';
+import { FindProvidersScreen } from '../screens/walkthrough/FindProvidersScreen';
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
-import { MatchingScreen } from '../screens/walkthrough/MatchingScreen';
 import { MyBookingsScreen } from '../screens/walkthrough/MyBookingsScreen';
 import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
+import { ProviderProfileScreen } from '../screens/walkthrough/ProviderProfileScreen';
 import { BookingDraft, ServiceSelection, ScheduleSelection } from '../types/bookingDraft';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 type TabKey =
   | 'home'
   | 'match'
+  | 'providerProfile'
   | 'learn'
   | 'funding'
   | 'account'
@@ -34,7 +36,7 @@ const tabs: Array<{
   inactiveIcon: IoniconName;
 }> = [
   { key: 'home', label: 'Home', activeIcon: 'home', inactiveIcon: 'home-outline' },
-  { key: 'match', label: 'Match', activeIcon: 'search', inactiveIcon: 'search-outline' },
+  { key: 'match', label: 'Providers', activeIcon: 'search', inactiveIcon: 'search-outline' },
   { key: 'learn', label: 'Learn', activeIcon: 'book', inactiveIcon: 'book-outline' },
   { key: 'funding', label: 'Funding', activeIcon: 'wallet', inactiveIcon: 'wallet-outline' },
   { key: 'account', label: 'Account', activeIcon: 'person', inactiveIcon: 'person-outline' },
@@ -53,13 +55,33 @@ export type ParticipantTabParamList = {
 export function ParticipantTabs() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
   const [draft, setDraft] = useState<Partial<BookingDraft>>({});
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [bookingProviderId, setBookingProviderId] = useState<string | undefined>(undefined);
   const insets = useSafeAreaInsets();
-  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings'].includes(activeTab);
+  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile'].includes(activeTab);
 
   const screen = useMemo(() => {
     switch (activeTab) {
       case 'match':
-        return <MatchingScreen />;
+        return (
+          <FindProvidersScreen
+            onSelectProvider={(providerId) => {
+              setSelectedProviderId(providerId);
+              setActiveTab('providerProfile');
+            }}
+          />
+        );
+      case 'providerProfile':
+        return selectedProviderId ? (
+          <ProviderProfileScreen
+            providerId={selectedProviderId}
+            onBack={() => setActiveTab('match')}
+            onBookSession={(provider) => {
+              setBookingProviderId(provider.id);
+              setActiveTab('bookService');
+            }}
+          />
+        ) : null;
       case 'learn':
         return <EducationLibraryScreen />;
       case 'funding':
@@ -81,6 +103,7 @@ export function ParticipantTabs() {
       case 'bookSchedule':
         return (
           <BookServiceStep2Screen
+            providerId={bookingProviderId}
             onBack={() => setActiveTab('bookService')}
             onContinue={(schedule: ScheduleSelection) => {
               setDraft((prev) => ({ ...prev, ...schedule }));
@@ -95,6 +118,7 @@ export function ParticipantTabs() {
             onBack={() => setActiveTab('bookSchedule')}
             onDone={() => {
               setDraft({});
+              setBookingProviderId(undefined);
               setActiveTab('home');
             }}
           />
@@ -116,12 +140,16 @@ export function ParticipantTabs() {
             roleLabel="Participant"
             onOpenEducation={() => setActiveTab('learn')}
             onOpenNotifications={() => setActiveTab('notifications')}
-            onOpenBooking={() => setActiveTab('bookService')}
+            onOpenBooking={() => {
+              setBookingProviderId(undefined);
+              setActiveTab('bookService');
+            }}
             onOpenBookings={() => setActiveTab('bookings')}
+            onOpenFindProviders={() => setActiveTab('match')}
           />
         );
     }
-  }, [activeTab, draft]);
+  }, [activeTab, draft, selectedProviderId, bookingProviderId]);
 
   return (
     <View style={styles.shell}>
