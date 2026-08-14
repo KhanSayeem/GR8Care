@@ -1,21 +1,70 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card } from '../../components';
+import { AvailabilityDay, AvailabilitySlot, getProviderAvailability } from '../../api/booking';
+
+// Placeholder until a "Find Providers" flow supplies a real selection. Override for local
+// testing with EXPO_PUBLIC_DEMO_PROVIDER_ID; an empty value shows the "no provider" state.
+const DEMO_PROVIDER_ID = process.env.EXPO_PUBLIC_DEMO_PROVIDER_ID ?? '';
 
 interface BookServiceStep2ScreenProps {
   onBack: () => void;
+  providerId?: string;
 }
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const CALENDAR_ROWS: Array<Array<number | null>> = [
-  [null, null, null, 1, 2, 3, 4],
-  [5, 6, 7, 8, 9, 10, 11],
-  [12, 13, 14, 15, 16, 17, 18],
-];
-const BOOKED_DAYS = new Set([4, 5, 8, 11, 12, 18]);
-const BOOKED_SLOTS = new Set(['8:00 AM', '9:00 AM', '12:00 PM']);
-const TIME_SLOTS = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
+
+function pad2(value: number) {
+  return String(value).padStart(2, '0');
+}
+
+function formatYMD(date: Date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function parseYMD(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function endOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function addMonths(date: Date, delta: number) {
+  return new Date(date.getFullYear(), date.getMonth() + delta, 1);
+}
+
+function formatTime12h(value: string) {
+  const [hourStr, minuteStr] = value.split(':');
+  const hour = Number(hourStr);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minuteStr} ${period}`;
+}
+
+function formatTimeRange(start: string, end: string) {
+  return `${formatTime12h(start)} - ${formatTime12h(end)}`;
+}
+
+function formatMonthLabel(date: Date) {
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function formatDayHeading(date: Date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatSelectedLabel(date: Date) {
+  return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+type CalendarCell = { day: number; dateStr: string } | null;
 
 function StepIndicator() {
   return (
@@ -47,12 +96,116 @@ function StepIndicator() {
   );
 }
 
-export function BookServiceStep2Screen({ onBack }: BookServiceStep2ScreenProps) {
-  const [selectedDay, setSelectedDay] = useState(15);
-  const [selectedSlot, setSelectedSlot] = useState('2:00 PM');
+function TimeSlotRow({ slot, selected, onPress }: { slot: AvailabilitySlot; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      className={`min-h-14 flex-row items-center justify-between rounded-md border px-3 py-2 ${
+        selected ? 'border-2 border-teal-dark bg-teal-light' : 'border-border bg-white'
+      }`}
+    >
+      <View>
+        <Text className="font-heading text-h3 text-text-dark">{formatTimeRange(slot.start, slot.end)}</Text>
+        <Text className="mt-0.5 font-body text-caption text-text-mid">{slot.service}</Text>
+      </View>
+      {selected ? <Ionicons name="checkmark" color="#0B4F6C" size={20} /> : null}
+    </Pressable>
+  );
+}
+
+export function BookServiceStep2Screen({ onBack, providerId = DEMO_PROVIDER_ID }: BookServiceStep2ScreenProps) {
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  const [availabilityDays, setAvailabilityDays] = useState<AvailabilityDay[]>([]);
+  const [boundary, setBoundary] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
-  const selectedLabel = useMemo(() => `Wed ${selectedDay} Jan`, [selectedDay]);
+  const todayStr = useMemo(() => formatYMD(new Date()), []);
+
+  const loadAvailability = useCallback(
+    async (month: Date, opts: { silent?: boolean } = {}) => {
+      if (opts.silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const startDate = formatYMD(startOfMonth(month));
+        const endDate = formatYMD(endOfMonth(month));
+        const result = await getProviderAvailability(providerId, startDate, endDate);
+        setAvailabilityDays(result.days);
+        setBoundary(result.boundary);
+        const firstOpenDay = result.days.find((day) => day.date >= todayStr && day.openSlots.length > 0);
+        setSelectedDate(firstOpenDay?.date ?? null);
+        setSelectedSlotId(null);
+        setConfirmed(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Availability could not be loaded.');
+        setAvailabilityDays([]);
+        setSelectedDate(null);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [providerId, todayStr]
+  );
+
+  useEffect(() => {
+    if (!providerId) {
+      setLoading(false);
+      setError(null);
+      setAvailabilityDays([]);
+      setSelectedDate(null);
+      return;
+    }
+    loadAvailability(visibleMonth);
+  }, [visibleMonth, providerId, loadAvailability]);
+
+  const availabilityByDate = useMemo(() => {
+    const map = new Map<string, AvailabilityDay>();
+    availabilityDays.forEach((entry) => map.set(entry.date, entry));
+    return map;
+  }, [availabilityDays]);
+
+  const monthGrid = useMemo(() => {
+    const first = startOfMonth(visibleMonth);
+    const daysInMonth = endOfMonth(visibleMonth).getDate();
+    const leadingBlanks = first.getDay();
+    const cells: CalendarCell[] = [];
+    for (let i = 0; i < leadingBlanks; i += 1) cells.push(null);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push({ day, dateStr: formatYMD(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day)) });
+    }
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    const rows: CalendarCell[][] = [];
+    for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+    return rows;
+  }, [visibleMonth]);
+
+  const canGoBackMonth = formatYMD(startOfMonth(visibleMonth)) > formatYMD(startOfMonth(new Date()));
+  const daySlots = (selectedDate ? availabilityByDate.get(selectedDate)?.openSlots : undefined) ?? [];
+  const selectedSlot = daySlots.find((slot) => slot.id === selectedSlotId) ?? null;
+
+  function handleSelectDay(dateStr: string) {
+    setSelectedDate(dateStr);
+    setSelectedSlotId(null);
+    setConfirmed(false);
+  }
+
+  function handleSelectSlot(slotId: string) {
+    setSelectedSlotId(slotId);
+    setConfirmed(false);
+  }
 
   return (
     <>
@@ -74,103 +227,141 @@ export function BookServiceStep2Screen({ onBack }: BookServiceStep2ScreenProps) 
           <StepIndicator />
 
           <Card className="mt-5 bg-white">
-            <View className="flex-row items-center justify-between">
-              <Text className="font-heading text-h3 text-text-dark">January 2025</Text>
-              <View className="flex-row items-center gap-3">
-                <Ionicons name="chevron-back" color="#0B4F6C" size={18} />
-                <Ionicons name="chevron-forward" color="#0B4F6C" size={18} />
-              </View>
-            </View>
-
-            <View className="mt-4 flex-row justify-between">
-              {WEEKDAYS.map((day) => (
-                <Text key={day} className="w-8 text-center font-caption text-label text-text-light">
-                  {day}
+            {!providerId ? (
+              <View className="items-center justify-center gap-2 py-8">
+                <Ionicons name="calendar-outline" color="#0B4F6C" size={22} />
+                <Text className="font-body-medium text-caption text-text-dark text-center">No provider selected yet</Text>
+                <Text className="font-body text-caption text-text-mid text-center">
+                  Choose a provider from Step 1 to see their real availability.
                 </Text>
-              ))}
-            </View>
-
-            <View className="mt-3 gap-2">
-              {CALENDAR_ROWS.map((row, rowIndex) => (
-                <View key={rowIndex} className="flex-row justify-between">
-                  {row.map((day, columnIndex) => {
-                    if (day === null) {
-                      return <View key={`blank-${columnIndex}`} className="h-8 w-8" />;
-                    }
-
-                    const booked = BOOKED_DAYS.has(day);
-                    const selected = selectedDay === day;
-                    return (
-                      <Pressable
-                        key={day}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: booked, selected }}
-                        disabled={booked}
-                        onPress={() => {
-                          setSelectedDay(day);
-                          setConfirmed(false);
-                        }}
-                        className={`h-8 w-8 items-center justify-center rounded-full ${selected ? 'bg-teal-dark' : 'bg-white'}`}
-                      >
-                        <Text className={`font-body text-caption ${booked ? 'text-[#D0D0D0]' : selected ? 'text-white' : 'text-text-dark'}`}>
-                          {day}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+              </View>
+            ) : loading ? (
+              <View className="items-center justify-center gap-2 py-10">
+                <ActivityIndicator color="#0B4F6C" />
+                <Text className="font-body text-caption text-text-mid">Loading availability...</Text>
+              </View>
+            ) : error ? (
+              <View className="items-center justify-center gap-2 py-6">
+                <Ionicons name="alert-circle" color="#E53E3E" size={22} />
+                <Text className="font-body-medium text-caption text-text-dark text-center">{error}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={refreshing}
+                  onPress={() => loadAvailability(visibleMonth, { silent: true })}
+                  className="mt-2 h-9 min-w-[110px] items-center justify-center rounded-md bg-teal-dark px-4"
+                >
+                  {refreshing ? <ActivityIndicator color="#F7F3EE" /> : <Text className="font-body-bold text-caption text-cream">Retry</Text>}
+                </Pressable>
+              </View>
+            ) : (
+              <>
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-heading text-h3 text-text-dark">{formatMonthLabel(visibleMonth)}</Text>
+                  <View className="flex-row items-center gap-3">
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Previous month"
+                      accessibilityState={{ disabled: !canGoBackMonth }}
+                      disabled={!canGoBackMonth}
+                      onPress={() => setVisibleMonth((prev) => addMonths(prev, -1))}
+                    >
+                      <Ionicons name="chevron-back" color={canGoBackMonth ? '#0B4F6C' : '#D0D0D0'} size={18} />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Next month"
+                      onPress={() => setVisibleMonth((prev) => addMonths(prev, 1))}
+                    >
+                      <Ionicons name="chevron-forward" color="#0B4F6C" size={18} />
+                    </Pressable>
+                  </View>
                 </View>
-              ))}
-            </View>
-          </Card>
 
-          <View className="mt-5 gap-3">
-            <Text className="font-caption text-label text-text-light">Available Time Slots - Jan {selectedDay}</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {TIME_SLOTS.map((slot) => {
-                const booked = BOOKED_SLOTS.has(slot);
-                const selected = selectedSlot === slot;
-                return (
-                  <Pressable
-                    key={slot}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: booked, selected }}
-                    disabled={booked}
-                    onPress={() => {
-                      setSelectedSlot(slot);
-                      setConfirmed(false);
-                    }}
-                    className={`h-10 w-[23%] items-center justify-center rounded-sm border ${
-                      booked ? 'border-border bg-border' : selected ? 'border-teal-dark bg-teal-dark' : 'border-border bg-white'
-                    }`}
-                  >
-                    <Text className={`font-body-medium text-caption ${booked ? 'text-text-light' : selected ? 'text-white' : 'text-text-dark'}`}>
-                      {slot}
+                <View className="mt-4 flex-row justify-between">
+                  {WEEKDAYS.map((day) => (
+                    <Text key={day} className="w-8 text-center font-caption text-label text-text-light">
+                      {day}
                     </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+                  ))}
+                </View>
 
-          <Card variant="warning" className="mt-5 bg-[#FEF3C7] p-3">
-            <Text className="font-body text-caption text-[#92400E]">
-              Locked slots are booked · Selected: {selectedLabel} · {selectedSlot}
-            </Text>
+                <View className="mt-3 gap-2">
+                  {monthGrid.map((row, rowIndex) => (
+                    <View key={rowIndex} className="flex-row justify-between">
+                      {row.map((cell, columnIndex) => {
+                        if (!cell) {
+                          return <View key={`blank-${rowIndex}-${columnIndex}`} className="h-8 w-8" />;
+                        }
+
+                        const entry = availabilityByDate.get(cell.dateStr);
+                        const hasSlots = Boolean(entry && entry.openSlots.length > 0);
+                        const isPast = cell.dateStr < todayStr;
+                        const disabled = isPast || !hasSlots;
+                        const selected = selectedDate === cell.dateStr;
+                        return (
+                          <Pressable
+                            key={cell.dateStr}
+                            accessibilityRole="button"
+                            accessibilityState={{ disabled, selected }}
+                            disabled={disabled}
+                            onPress={() => handleSelectDay(cell.dateStr)}
+                            className={`h-8 w-8 items-center justify-center rounded-full ${selected ? 'bg-teal-dark' : 'bg-white'}`}
+                          >
+                            <Text className={`font-body text-caption ${disabled ? 'text-[#D0D0D0]' : selected ? 'text-white' : 'text-text-dark'}`}>
+                              {cell.day}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
           </Card>
 
+          {providerId && !loading && !error ? (
+            <View className="mt-5 gap-3">
+              <Text className="font-caption text-label text-text-light">
+                Available Time Slots{selectedDate ? ` - ${formatDayHeading(parseYMD(selectedDate))}` : ''}
+              </Text>
+              {selectedDate && daySlots.length > 0 ? (
+                <View className="gap-2">
+                  {daySlots.map((slot) => (
+                    <TimeSlotRow key={slot.id} slot={slot} selected={slot.id === selectedSlotId} onPress={() => handleSelectSlot(slot.id)} />
+                  ))}
+                </View>
+              ) : (
+                <Card className="bg-white">
+                  <Text className="font-body text-caption text-text-mid text-center">
+                    No open availability in {formatMonthLabel(visibleMonth)}. Try another month using the arrows above.
+                  </Text>
+                </Card>
+              )}
+            </View>
+          ) : null}
+
+          {providerId && !loading && !error && boundary ? (
+            <Card variant="warning" className="mt-5 bg-[#FEF3C7] p-3">
+              <Text className="font-body text-caption text-[#92400E]">{boundary}</Text>
+              {selectedSlot && selectedDate ? (
+                <Text className="mt-1 font-body-medium text-caption text-[#92400E]">
+                  Selected: {formatSelectedLabel(parseYMD(selectedDate))} · {formatTimeRange(selectedSlot.start, selectedSlot.end)}
+                </Text>
+              ) : null}
+            </Card>
+          ) : null}
+
           <View className="mt-5 gap-3">
-            <Button
-              label={confirmed ? 'Schedule selection saved' : 'Next: Confirm Booking'}
-              onPress={() => setConfirmed(true)}
-            />
+            <Button label={confirmed ? 'Schedule selection saved' : 'Next: Confirm Booking'} disabled={!selectedSlot} onPress={() => setConfirmed(true)} />
             <Button label="← Change Service" variant="outline" onPress={onBack} />
           </View>
 
-          {confirmed ? (
+          {confirmed && selectedSlot && selectedDate ? (
             <Card variant="highlight" className="mt-4">
               <Text className="font-caption text-label uppercase text-teal-dark">Ready to confirm</Text>
               <Text className="mt-1 font-body text-body text-text-mid">
-                Daily Living Support · {selectedLabel} · {selectedSlot}
+                {selectedSlot.service} · {formatSelectedLabel(parseYMD(selectedDate))} · {formatTimeRange(selectedSlot.start, selectedSlot.end)}
               </Text>
             </Card>
           ) : null}
