@@ -175,4 +175,71 @@ describe('Auth API', () => {
     const res = await request(app).get('/users/me');
     expect(res.status).toBe(401);
   });
+
+  it('updates consent, profile fields, and preferences via PATCH /users/me', async () => {
+    const registration = await request(app).post('/auth/register').send({
+      fullName: 'Alan Turing',
+      email: 'alan@example.com',
+      password: 'supersecret',
+      role: 'participant',
+    });
+
+    const res = await request(app)
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${registration.body.token}`)
+      .send({
+        fullName: 'Alan M. Turing',
+        location: 'Parramatta',
+        goals: [' Independence ', '', 'Community access'],
+        notificationsEnabled: false,
+        consent: { dataCollection: true, telehealthPrivacy: true },
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.fullName).toBe('Alan M. Turing');
+    expect(res.body.user.location).toBe('Parramatta');
+    expect(res.body.user.goals).toEqual(['Independence', 'Community access']);
+    expect(res.body.user.notificationsEnabled).toBe(false);
+    expect(res.body.user.consent).toEqual(
+      expect.objectContaining({ dataCollection: true, telehealthPrivacy: true, aiTranslation: false })
+    );
+
+    const second = await request(app)
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${registration.body.token}`)
+      .send({ consent: { aiTranslation: true } });
+
+    expect(second.status).toBe(200);
+    expect(second.body.user.consent).toEqual(
+      expect.objectContaining({ dataCollection: true, telehealthPrivacy: true, aiTranslation: true })
+    );
+    expect(second.body.user.fullName).toBe('Alan M. Turing');
+  });
+
+  it('rejects an empty fullName and unrecognized consent keys on PATCH /users/me', async () => {
+    const registration = await request(app).post('/auth/register').send({
+      fullName: 'Katherine Johnson',
+      email: 'katherine@example.com',
+      password: 'supersecret',
+      role: 'participant',
+    });
+
+    const res = await request(app)
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${registration.body.token}`)
+      .send({ fullName: '   ', consent: { paymentSharing: true } });
+
+    expect(res.status).toBe(400);
+    expect(res.body.details).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('fullName cannot be empty'),
+        expect.stringContaining('consent.paymentSharing is not a recognized field'),
+      ])
+    );
+  });
+
+  it('rejects PATCH /users/me without a token', async () => {
+    const res = await request(app).patch('/users/me').send({ fullName: 'No Token' });
+    expect(res.status).toBe(401);
+  });
 });

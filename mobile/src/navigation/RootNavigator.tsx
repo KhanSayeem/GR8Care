@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
-import { LoginScreen } from '../screens/auth/LoginScreen';
+import { AuthFlow } from './AuthFlow';
 import { ParticipantTabs } from './ParticipantTabs';
 import { ProviderTabs } from './ProviderTabs';
 import { AdminTabs } from './AdminTabs';
@@ -27,5 +27,5 @@ function RoleShell() {
 export function RootNavigator() {
   const user = useAuthStore((state) => state.user);
 
-  return <NavigationContainer>{user ? <RoleShell /> : <LoginScreen />}</NavigationContainer>;
+  return <NavigationContainer>{user ? <RoleShell /> : <AuthFlow />}</NavigationContainer>;
 }

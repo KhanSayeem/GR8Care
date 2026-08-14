@@ -271,7 +271,7 @@ export function HomeScreen({
               ) : providerStats ? (
                 <>
                   <View style={styles.dashboardHeader}>
-                    <View>
+                    <View style={styles.bookingCopy}>
                       <Text style={styles.sectionLabel}>Provider dashboard</Text>
                       <Text style={styles.dashboardName}>{providerStats.displayName}</Text>
                     </View>
@@ -289,8 +289,10 @@ export function HomeScreen({
                   </View>
 
                   <View style={styles.scheduleHeader}>
-                    <Text style={styles.sectionLabel}>Today's schedule{providerScheduleDay ? ` - ${providerScheduleDay}` : ''}</Text>
-                    <Text style={styles.metricDetail}>{providerStats.activeAvailabilityBlocks} active blocks</Text>
+                    <Text style={[styles.sectionLabel, { flexShrink: 1 }]} numberOfLines={1}>
+                      Today's schedule{providerScheduleDay ? ` - ${providerScheduleDay}` : ''}
+                    </Text>
+                    <Text style={[styles.metricDetail, { flexShrink: 0 }]}>{providerStats.activeAvailabilityBlocks} active blocks</Text>
                   </View>
                   <View style={styles.scheduleStack}>
                     {providerSchedule.length === 0 ? (
@@ -879,6 +881,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   taskStack: {
+    marginTop: 14,
     gap: 12,
   },
   templateExample: {
