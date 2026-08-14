@@ -10,10 +10,12 @@ import { EducationLibraryScreen } from '../screens/walkthrough/EducationLibraryS
 import { FindProvidersScreen } from '../screens/walkthrough/FindProvidersScreen';
 import { FundingScreen } from '../screens/walkthrough/FundingScreen';
 import { HomeScreen } from '../screens/walkthrough/HomeScreen';
+import { LiveTrackingScreen } from '../screens/walkthrough/LiveTrackingScreen';
 import { MyBookingsScreen } from '../screens/walkthrough/MyBookingsScreen';
 import { NotificationsScreen } from '../screens/walkthrough/NotificationsScreen';
 import { ProfileScreen } from '../screens/walkthrough/ProfileScreen';
 import { ProviderProfileScreen } from '../screens/walkthrough/ProviderProfileScreen';
+import { BookingDetailRecord } from '../api/booking';
 import { BookingDraft, ServiceSelection, ScheduleSelection } from '../types/bookingDraft';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -29,7 +31,8 @@ type TabKey =
   | 'bookSchedule'
   | 'bookConfirm'
   | 'bookings'
-  | 'aiBot';
+  | 'aiBot'
+  | 'tracking';
 
 const tabs: Array<{
   key: TabKey;
@@ -59,8 +62,9 @@ export function ParticipantTabs() {
   const [draft, setDraft] = useState<Partial<BookingDraft>>({});
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [bookingProviderId, setBookingProviderId] = useState<string | undefined>(undefined);
+  const [trackingBooking, setTrackingBooking] = useState<BookingDetailRecord | null>(null);
   const insets = useSafeAreaInsets();
-  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile', 'aiBot'].includes(activeTab);
+  const showTabBar = !['bookService', 'bookSchedule', 'bookConfirm', 'bookings', 'providerProfile', 'aiBot', 'tracking'].includes(activeTab);
 
   const screen = useMemo(() => {
     switch (activeTab) {
@@ -134,9 +138,29 @@ export function ParticipantTabs() {
           />
         );
       case 'bookings':
-        return <MyBookingsScreen onBack={() => setActiveTab('home')} />;
+        return (
+          <MyBookingsScreen
+            onBack={() => setActiveTab('home')}
+            onTrackProvider={(booking) => {
+              setTrackingBooking(booking);
+              setActiveTab('tracking');
+            }}
+          />
+        );
       case 'aiBot':
         return <AiEducatorBotScreen onBack={() => setActiveTab('home')} />;
+      case 'tracking':
+        return trackingBooking ? (
+          <LiveTrackingScreen booking={trackingBooking} onBack={() => setActiveTab('bookings')} />
+        ) : (
+          <MyBookingsScreen
+            onBack={() => setActiveTab('home')}
+            onTrackProvider={(booking) => {
+              setTrackingBooking(booking);
+              setActiveTab('tracking');
+            }}
+          />
+        );
       case 'home':
       default:
         return (
@@ -144,6 +168,10 @@ export function ParticipantTabs() {
             roleLabel="Participant"
             onOpenEducation={() => setActiveTab('learn')}
             onOpenAiBot={() => setActiveTab('aiBot')}
+            onOpenTracking={(booking) => {
+              setTrackingBooking(booking);
+              setActiveTab('tracking');
+            }}
             onOpenNotifications={() => setActiveTab('notifications')}
             onOpenBooking={() => {
               setBookingProviderId(undefined);
@@ -154,7 +182,7 @@ export function ParticipantTabs() {
           />
         );
     }
-  }, [activeTab, draft, selectedProviderId, bookingProviderId]);
+  }, [activeTab, draft, selectedProviderId, bookingProviderId, trackingBooking]);
 
   return (
     <View style={styles.shell}>

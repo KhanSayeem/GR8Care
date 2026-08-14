@@ -14,6 +14,7 @@ interface HomeScreenProps {
   providerSection?: ProviderSection;
   onOpenEducation?: () => void;
   onOpenAiBot?: () => void;
+  onOpenTracking?: (booking: BookingDetailRecord) => void;
   onOpenAvailability?: () => void;
   onOpenNotifications?: () => void;
   onOpenBooking?: () => void;
@@ -34,6 +35,7 @@ interface QuickAction {
   bg: string;
   educationShortcut?: boolean;
   aiBotShortcut?: boolean;
+  trackingShortcut?: boolean;
   availabilityShortcut?: boolean;
   bookingShortcut?: boolean;
   scheduleShortcut?: boolean;
@@ -46,7 +48,7 @@ const participantQuickActions: QuickAction[] = [
   { title: 'Education Library', subtitle: 'Browse categories', icon: 'book', color: '#0B4F6C', bg: '#D0EAF2', educationShortcut: true },
   { title: 'Find Provider', subtitle: 'Search by area', icon: 'search', color: '#1A1A2E', bg: '#FFFFFF', findProvidersShortcut: true },
   { title: 'Book Service', subtitle: 'Schedule now', icon: 'calendar', color: '#E8734A', bg: '#FFF1EA', bookingShortcut: true },
-  { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5' },
+  { title: 'Track Provider', subtitle: 'Live location', icon: 'navigate-circle', color: '#E53E3E', bg: '#FFF5F5', trackingShortcut: true },
   { title: 'Ask S-TRAH AI', subtitle: 'Plain language', icon: 'school', color: '#2D9E6B', bg: '#D4F0E4', aiBotShortcut: true },
 ];
 
@@ -143,6 +145,7 @@ export function HomeScreen({
   providerSection = 'dashboard',
   onOpenEducation,
   onOpenAiBot,
+  onOpenTracking,
   onOpenAvailability,
   onOpenNotifications,
   onOpenBooking,
@@ -406,7 +409,11 @@ export function HomeScreen({
                     ? onOpenEducation
                     : action.aiBotShortcut
                       ? onOpenAiBot
-                      : action.availabilityShortcut
+                      : action.trackingShortcut
+                        ? upcomingBooking && onOpenTracking
+                          ? () => onOpenTracking(upcomingBooking)
+                          : undefined
+                        : action.availabilityShortcut
                       ? onOpenAvailability
                       : action.bookingShortcut
                         ? onOpenBooking
