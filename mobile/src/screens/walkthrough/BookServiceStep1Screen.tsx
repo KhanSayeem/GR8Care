@@ -1,12 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card } from '../../components';
 import { ServiceSelection } from '../../types/bookingDraft';
+import { ProviderSummary, getProviders } from '../../api/providers';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface BookServiceStep1ScreenProps {
+  providerId?: string;
   onBack: () => void;
   onContinue?: (selection: ServiceSelection) => void;
 }
@@ -100,11 +102,36 @@ function SelectCard({
   );
 }
 
-export function BookServiceStep1Screen({ onBack, onContinue }: BookServiceStep1ScreenProps) {
+export function BookServiceStep1Screen({ providerId, onBack, onContinue }: BookServiceStep1ScreenProps) {
   const [serviceId, setServiceId] = useState(SERVICE_OPTIONS[0].id);
   const [assignmentMethod, setAssignmentMethod] = useState<'auto' | 'manual'>('auto');
   const [sessionType, setSessionType] = useState<'inPerson' | 'remote'>('inPerson');
   const [saved, setSaved] = useState(false);
+  // Step 2 needs a real provider to look up availability. Previously step 1
+  // showed a hardcoded example provider and passed nothing along, so booking
+  // from the dashboard always dead-ended on "No provider selected yet".
+  const [providers, setProviders] = useState<ProviderSummary[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | undefined>(providerId);
+
+  useEffect(() => {
+    let cancelled = false;
+    getProviders()
+      .then((res) => {
+        if (cancelled) return;
+        setProviders(res.providers);
+        setSelectedProviderId((current) => current ?? res.providers[0]?.id);
+      })
+      .catch(() => {
+        if (!cancelled) setProviders([]);
+      })
+      .finally(() => {
+        if (!cancelled) setProvidersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selectedService = useMemo(
     () => SERVICE_OPTIONS.find((service) => service.id === serviceId) ?? SERVICE_OPTIONS[0],
@@ -130,17 +157,36 @@ export function BookServiceStep1Screen({ onBack, onContinue }: BookServiceStep1S
 
           <StepIndicator />
 
-          <Card className="mt-5 bg-white">
-            <View className="flex-row items-center gap-3">
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-teal-dark">
-                <Text className="font-heading text-h3 text-white">MR</Text>
-              </View>
-              <View className="min-w-0 flex-1">
-                <Text className="font-heading text-h3 text-text-dark">Maria Rodriguez</Text>
-                <Text className="mt-1 font-body text-caption text-text-mid">Occupational Therapist · $95/hr</Text>
-              </View>
-            </View>
-          </Card>
+          <View className="mt-5 gap-2">
+            <Text className="font-caption text-label uppercase text-text-light">Choose Provider</Text>
+            {providersLoading ? (
+              <Card className="bg-white">
+                <View className="items-center" style={{ gap: 8, paddingVertical: 12 }}>
+                  <ActivityIndicator color="#0B4F6C" />
+                  <Text className="font-body text-caption text-text-mid">Loading providers...</Text>
+                </View>
+              </Card>
+            ) : providers.length === 0 ? (
+              <Card className="bg-white">
+                <Text className="font-body text-caption text-text-mid text-center">
+                  No providers are available yet. Try again later.
+                </Text>
+              </Card>
+            ) : (
+              providers.map((provider) => (
+                <SelectCard
+                  key={provider.id}
+                  title={provider.name}
+                  subtitle={[provider.location, provider.hourlyRate ? `$${provider.hourlyRate}/hr` : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  icon="person"
+                  selected={provider.id === selectedProviderId}
+                  onPress={() => setSelectedProviderId(provider.id)}
+                />
+              ))
+            )}
+          </View>
 
           <View className="mt-5 gap-2">
             <Text className="font-caption text-label uppercase text-text-light">Select Service Type</Text>
@@ -208,8 +254,10 @@ export function BookServiceStep1Screen({ onBack, onContinue }: BookServiceStep1S
               label={saved ? 'Next: Choose Date & Time' : 'Save service preferences'}
               onPress={() => {
                 if (saved) {
+                  if (!selectedProviderId) return;
                   onContinue?.({
                     service: selectedService,
+                    providerId: selectedProviderId,
                     assignmentMethod,
                     sessionType,
                   });
