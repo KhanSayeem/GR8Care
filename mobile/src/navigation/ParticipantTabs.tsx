@@ -106,9 +106,11 @@ export function ParticipantTabs() {
       case 'bookService':
         return (
           <BookServiceStep1Screen
+            providerId={bookingProviderId}
             onBack={() => setActiveTab('home')}
             onContinue={(selection: ServiceSelection) => {
               setDraft((prev) => ({ ...prev, ...selection }));
+              setBookingProviderId(selection.providerId);
               setActiveTab('bookSchedule');
             }}
           />
@@ -137,9 +139,11 @@ export function ParticipantTabs() {
           />
         ) : (
           <BookServiceStep1Screen
+            providerId={bookingProviderId}
             onBack={() => setActiveTab('home')}
             onContinue={(selection: ServiceSelection) => {
               setDraft((prev) => ({ ...prev, ...selection }));
+              setBookingProviderId(selection.providerId);
               setActiveTab('bookSchedule');
             }}
           />

@@ -1,4 +1,5 @@
 export interface ServiceSelection {
+  providerId: string;
   service: { id: string; title: string; category: string; rate: string };
   assignmentMethod: 'auto' | 'manual';
   sessionType: 'inPerson' | 'remote';

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StatusBar, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppNotification, getNotifications, markNotificationsRead } from '../../api/notifications';
+import { useAuthStore } from '../../store/authStore';
 import { Badge, Button, Card } from '../../components';
 import { ScreenShell } from './ScreenShell';
 
@@ -69,6 +70,8 @@ function groupNotifications(notifications: AppNotification[]) {
 }
 
 export function NotificationsScreen() {
+  const user = useAuthStore((state) => state.user);
+  const firstName = user?.fullName?.trim().split(/s+/)[0];
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [boundary, setBoundary] = useState('');
@@ -317,7 +320,7 @@ export function NotificationsScreen() {
     <ScreenShell
       eyebrow="Notifications"
       title="Updates that affect today's supports"
-      subtitle="Booking movement, funding alerts, confirmations, and education suggestions for Amina's plan."
+      subtitle={`Booking movement, funding alerts, confirmations, and education suggestions${firstName ? ` for ${firstName}'s plan` : ''}.`}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#F7F3EE" />
       {renderStatusCard()}

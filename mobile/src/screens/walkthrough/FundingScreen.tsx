@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import { FundingCategoryKey, FundingCategorySummary, FundingSummary, FundingTransaction, getFundingSummary, getFundingTransactions } from '../../api/funding';
 import { Card, ProgressBar } from '../../components';
+import { useAuthStore } from '../../store/authStore';
 
 type ProgressTone = 'teal-dark' | 'provider-green' | 'error';
 
@@ -43,6 +44,8 @@ function getShortCategoryLabel(label: string) {
 }
 
 export function FundingScreen() {
+  const fundingUser = useAuthStore((state) => state.user);
+  const fundingFirstName = fundingUser?.fullName?.trim().split(/s+/)[0] ?? 'there';
   const [summary, setSummary] = useState<FundingSummary | null>(null);
   const [transactions, setTransactions] = useState<FundingTransaction[]>([]);
   const [boundary, setBoundary] = useState('');
@@ -137,7 +140,7 @@ export function FundingScreen() {
             <Ionicons name="school" color="#0B4F6C" size={20} />
           </View>
           <View style={styles.educatorCopy}>
-            <Text style={styles.educatorTitle}>Hi Amina, here is your funding snapshot</Text>
+            <Text style={styles.educatorTitle}>{`Hi ${fundingFirstName}, here is your funding snapshot`}</Text>
             <Text style={styles.educatorBody}>
               {summary
                 ? `You have used ${formatCurrency(totalUsed, currency)} of ${formatCurrency(totalAllocation, currency)}. ${
