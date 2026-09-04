@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import { BookingDetailRecord, getBookingDetail, getBookings } from '../../api/booking';
 import { ProviderScheduleBlock, ProviderStats, getProviderScheduleToday, getProviderStats } from '../../api/providerDashboard';
+import { getNotifications } from '../../api/notifications';
 import { Badge, Card, ProgressBar } from '../../components';
 import { fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
 import { useAuthStore } from '../../store/authStore';
@@ -166,6 +167,7 @@ export function HomeScreen({
   const [upcomingBooking, setUpcomingBooking] = useState<BookingDetailRecord | null>(null);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const user = useAuthStore((state) => state.user);
 
@@ -214,6 +216,21 @@ export function HomeScreen({
   useEffect(() => {
     loadProviderDashboard();
   }, [loadProviderDashboard]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getNotifications({ unreadOnly: true })
+      .then((res) => {
+        if (!cancelled) setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {
+        // The badge is decoration: a failure here should not disturb the dashboard.
+        if (!cancelled) setUnreadCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const loadUpcomingBooking = useCallback(() => {
     if (isProviderShell) return () => {};
@@ -277,7 +294,7 @@ export function HomeScreen({
               style={styles.bellButton}
             >
               <Ionicons name="notifications" color="#FFFFFF" size={20} />
-              <View style={styles.notificationDot} />
+              {unreadCount > 0 ? <View style={styles.notificationDot} /> : null}
             </Pressable>
           </View>
           <View style={styles.heroPills}>
