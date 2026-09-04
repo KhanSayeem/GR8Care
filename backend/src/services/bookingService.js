@@ -4,6 +4,7 @@ const { BOOKING_STATUSES } = require('../models/Booking');
 const ProviderAvailability = require('../models/ProviderAvailability');
 const ServiceRequest = require('../models/ServiceRequest');
 const User = require('../models/User');
+const { safeCreateNotification } = require('./notifications');
 
 const BOOKING_REQUEST_BOUNDARY =
   'Booking requests remain pending until provider confirmation. Availability and conflict checks do not replace participant consent, worker assignment, or provider policy approval.';
@@ -150,6 +151,82 @@ async function findActiveUser(id, roles, label) {
   return user;
 }
 
+// Booking events are the only thing users expect to be told about in this MVP,
+// so they are what populates the notifications screen.
+function formatBookingWhen(booking) {
+  const start = new Date(booking.scheduledStart);
+  return start.toLocaleString('en-AU', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
+}
+
+async function notifyBookingCreated(booking, participant, provider) {
+  await safeCreateNotification({
+    recipient: provider._id,
+    type: 'booking',
+    priority: 'warning',
+    title: 'New booking request',
+    body: `${participant.fullName} requested ${booking.service} on ${formatBookingWhen(booking)}. It stays pending until you confirm.`,
+    category: 'Bookings',
+    contextLabel: 'Participant',
+    contextValue: participant.fullName,
+    actionLabel: 'Review request',
+    metadata: { bookingId: booking._id.toString() },
+  });
+}
+
+const STATUS_NOTIFICATIONS = {
+  confirmed: { priority: 'success', title: 'Booking confirmed', verb: 'confirmed' },
+  declined: { priority: 'critical', title: 'Booking declined', verb: 'declined' },
+  inProgress: { priority: 'info', title: 'Session started', verb: 'started' },
+  completed: { priority: 'success', title: 'Session completed', verb: 'completed' },
+};
+
+async function notifyBookingStatusChanged(booking) {
+  const config = STATUS_NOTIFICATIONS[booking.status];
+  if (!config) return;
+
+  const provider = await User.findById(getRefId(booking.provider));
+
+  await safeCreateNotification({
+    recipient: getRefId(booking.participant),
+    type: 'booking',
+    priority: config.priority,
+    title: config.title,
+    body: `${provider ? provider.fullName : 'Your provider'} ${config.verb} your ${booking.service} on ${formatBookingWhen(booking)}.`,
+    category: 'Bookings',
+    contextLabel: 'Provider',
+    contextValue: provider ? provider.fullName : 'Provider',
+    actionLabel: 'View booking',
+    metadata: { bookingId: booking._id.toString() },
+  });
+}
+
+// Whoever did not press cancel is the one who needs telling.
+async function notifyBookingCancelled(booking, cancelledByUser) {
+  const participantId = getRefId(booking.participant);
+  const providerId = getRefId(booking.provider);
+  const cancelledById = cancelledByUser._id.toString();
+  const recipient = cancelledById === participantId.toString() ? providerId : participantId;
+
+  await safeCreateNotification({
+    recipient,
+    type: 'booking',
+    priority: 'warning',
+    title: 'Booking cancelled',
+    body: `${cancelledByUser.fullName} cancelled the ${booking.service} on ${formatBookingWhen(booking)}.`,
+    category: 'Bookings',
+    contextLabel: 'Cancelled by',
+    contextValue: cancelledByUser.fullName,
+    metadata: { bookingId: booking._id.toString() },
+  });
+}
+
 async function createBooking(requester, payload = {}) {
   const providerId = payload.providerId;
   const participantId = payload.participantId || requester._id;
@@ -219,6 +296,8 @@ async function createBooking(requester, payload = {}) {
     notes: normalizeText(payload.notes),
     metadata: payload.metadata && typeof payload.metadata === 'object' ? payload.metadata : {},
   });
+
+  await notifyBookingCreated(booking, participant, provider);
 
   return {
     mode: 'bookingCreated',
@@ -357,6 +436,11 @@ async function updateBooking(user, bookingId, payload = {}) {
   }
 
   await booking.save();
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'status')) {
+    await notifyBookingStatusChanged(booking);
+  }
+
   const populated = await findAccessibleBooking(user, booking._id, { populate: true });
 
   return {
@@ -386,6 +470,8 @@ async function cancelBooking(user, bookingId, payload = {}) {
   booking.cancelledAt = new Date();
   booking.cancelledBy = user._id;
   await booking.save();
+
+  await notifyBookingCancelled(booking, user);
 
   return {
     mode: 'bookingCancelled',

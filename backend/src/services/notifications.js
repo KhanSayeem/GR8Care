@@ -54,8 +54,53 @@ async function markNotificationsReadForUser(userId, ids = []) {
   };
 }
 
+// Notifications had read and mark-read paths but nothing ever wrote one, so the
+// screen was permanently empty. Booking events call this.
+async function createNotification({
+  recipient,
+  type,
+  priority = 'info',
+  title,
+  body,
+  category,
+  contextLabel,
+  contextValue,
+  actionLabel,
+  metadata = {},
+}) {
+  if (!recipient || !type || !title || !body) {
+    return null;
+  }
+
+  return Notification.create({
+    recipient,
+    type,
+    priority,
+    title,
+    body,
+    category,
+    contextLabel,
+    contextValue,
+    actionLabel,
+    metadata,
+  });
+}
+
+// A notification is a side effect: never let one failing take down the booking
+// action that triggered it.
+async function safeCreateNotification(input) {
+  try {
+    return await createNotification(input);
+  } catch (err) {
+    console.error('Failed to create notification:', err.message);
+    return null;
+  }
+}
+
 module.exports = {
   NOTIFICATION_BOUNDARY,
+  createNotification,
+  safeCreateNotification,
   listNotificationsForUser,
   markNotificationsReadForUser,
   normalizeNotificationIds,
