@@ -58,6 +58,12 @@ const bookingSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    // Participant feedback, captured after the session is completed.
+    feedback: {
+      rating: { type: Number, min: 1, max: 5, default: null },
+      comment: { type: String, trim: true, default: '' },
+      submittedAt: { type: Date, default: null },
+    },
     metadata: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
   },
   { timestamps: true }

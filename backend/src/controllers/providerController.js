@@ -104,7 +104,8 @@ async function listProvidersHandler(req, res) {
     near: req.query.near,
     language: req.query.language,
     goals: req.query.goals,
-    topRated: req.query.topRated,
+    zone: req.query.zone,
+      topRated: req.query.topRated,
   });
   res.json(result);
 }

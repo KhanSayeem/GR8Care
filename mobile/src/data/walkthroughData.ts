@@ -135,6 +135,10 @@ export const calmingAudioItem = {
 export const educationTopics = [
   {
     title: 'Understanding NDIS goals',
+    source: "NDIS - Your plan: goals",
+    sourceUrl: "ndis.gov.au/participants/creating-your-plan",
+    version: '2026.1',
+    lastVerified: '4 Sep 2026',
     category: 'NDIS Basics',
     readTime: '4 min',
     language: 'English, Bengali available',
@@ -144,6 +148,10 @@ export const educationTopics = [
   },
   {
     title: 'WHODAS overview',
+    source: "WHO - WHODAS 2.0 overview",
+    sourceUrl: "who.int/standards/classifications",
+    version: '2026.1',
+    lastVerified: '4 Sep 2026',
     category: 'Support Education',
     readTime: '6 min',
     language: 'English',
@@ -153,6 +161,10 @@ export const educationTopics = [
   },
   {
     title: 'Preparing for plan review',
+    source: "NDIS - Plan reassessment",
+    sourceUrl: "ndis.gov.au/participants/reviewing-your-plan",
+    version: '2026.1',
+    lastVerified: '4 Sep 2026',
     category: 'Funding Education',
     readTime: '5 min',
     language: 'English, Arabic available',
@@ -162,6 +174,10 @@ export const educationTopics = [
   },
   {
     title: 'Provider communication basics',
+    source: "NDIS Commission - Provider obligations",
+    sourceUrl: "ndiscommission.gov.au/providers",
+    version: '2026.1',
+    lastVerified: '4 Sep 2026',
     category: 'Provider Education',
     readTime: '3 min',
     language: 'English',

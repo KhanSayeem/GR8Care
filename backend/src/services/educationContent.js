@@ -1,11 +1,15 @@
 const { EDUCATION_CATEGORIES } = require('../models/EducationContent');
 
 const EDUCATION_BOUNDARY =
-  'Educational information only. This is not official NDIA advice, not legal advice, not clinical advice, and not funding approval.';
+  'Educational information only. This is not official NDIA advice, not legal advice, not clinical advice, and not funding approval. Always check the cited source for the current version.';
 
 const SEEDED_EDUCATION_CONTENT = [
   {
     id: 'understanding-ndis-goals',
+    source: "NDIS - Your plan: goals",
+    sourceUrl: "https://www.ndis.gov.au/participants/creating-your-plan",
+    version: "2026.1",
+    lastVerified: '2026-09-04',
     title: 'Understanding NDIS goals',
     category: 'NDIS Basics',
     summary: 'Plain-language guide to turning support needs into goals.',
@@ -15,6 +19,10 @@ const SEEDED_EDUCATION_CONTENT = [
   },
   {
     id: 'preparing-for-plan-review',
+    source: "NDIS - Plan reassessment",
+    sourceUrl: "https://www.ndis.gov.au/participants/reviewing-your-plan",
+    version: "2026.1",
+    lastVerified: '2026-09-04',
     title: 'Preparing for plan review',
     category: 'Funding Education',
     summary: 'Documents, examples, and outcomes to collect before review day.',
@@ -24,6 +32,10 @@ const SEEDED_EDUCATION_CONTENT = [
   },
   {
     id: 'whodas-overview',
+    source: "WHO - WHODAS 2.0 overview",
+    sourceUrl: "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health/who-disability-assessment-schedule",
+    version: "2026.1",
+    lastVerified: '2026-09-04',
     title: 'WHODAS overview',
     category: 'Support Education',
     summary: 'What the domains mean and how support teams can explain them.',
@@ -33,6 +45,10 @@ const SEEDED_EDUCATION_CONTENT = [
   },
   {
     id: 'provider-communication-basics',
+    source: "NDIS Commission - Provider obligations",
+    sourceUrl: "https://www.ndiscommission.gov.au/providers",
+    version: "2026.1",
+    lastVerified: '2026-09-04',
     title: 'Provider communication basics',
     category: 'Provider Education',
     summary: 'How providers can explain service boundaries and next steps clearly.',

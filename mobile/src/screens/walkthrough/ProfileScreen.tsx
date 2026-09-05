@@ -4,19 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { updateMyProfile } from '../../api/auth';
 import { Button, Card } from '../../components';
 import { useAuthStore } from '../../store/authStore';
+import { ConsentScreen } from './ConsentScreen';
 import { LanguagePreferenceScreen } from './LanguagePreferenceScreen';
 import { PersonalInformationScreen } from './PersonalInformationScreen';
 import { ScreenShell } from './ScreenShell';
 import { SubscriptionScreen } from './SubscriptionScreen';
 import { WhodasAssessmentScreen } from './WhodasAssessmentScreen';
 
-type ProfileView = 'main' | 'personalInfo' | 'whodas' | 'language' | 'subscription';
+type ProfileView = 'main' | 'personalInfo' | 'whodas' | 'language' | 'subscription' | 'consent';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
   vi: 'Vietnamese',
   zh: 'Mandarin',
   ar: 'Arabic',
+  pa: 'Punjabi',
 };
 
 function SettingsRow({
@@ -91,6 +93,10 @@ export function ProfileScreen() {
     );
   }
 
+  if (view === 'consent') {
+    return <ConsentScreen onBack={() => setView('main')} />;
+  }
+
   if (view === 'whodas') {
     return <WhodasAssessmentScreen onBack={() => setView('main')} />;
   }
@@ -133,6 +139,12 @@ export function ProfileScreen() {
       <SettingsRow icon="clipboard" title="WHODAS Assessment" subtitle="Pending client confirmation" onPress={() => setView('whodas')} />
       <SettingsRow icon="language" title="Language" subtitle={languageLabel} onPress={() => setView('language')} />
       <SettingsRow icon="ribbon" title="Subscription & Plan" subtitle="View your plan and features" onPress={() => setView('subscription')} />
+      <SettingsRow
+        icon="shield-checkmark"
+        title="Privacy & Consent"
+        subtitle="See and change what you share"
+        onPress={() => setView('consent')}
+      />
 
       <Card style={{ marginTop: 16 }}>
         <View className="flex-row items-center justify-between gap-3">

@@ -11,7 +11,7 @@ interface FindProvidersScreenProps {
   onOpenZoneOutreach?: () => void;
 }
 
-const LANGUAGE_CHIPS = ['English', 'Vietnamese', 'Mandarin', 'Arabic'];
+const LANGUAGE_CHIPS = ['English', 'Vietnamese', 'Mandarin', 'Arabic', 'Punjabi'];
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);

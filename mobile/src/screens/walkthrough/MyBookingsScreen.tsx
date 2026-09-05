@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge, Card } from '../../components';
-import { BookingDetailRecord, BookingStatus, BookingWindow, cancelBooking, getBookingDetail, getBookings } from '../../api/booking';
+import { BookingDetailRecord, BookingStatus, BookingWindow, cancelBooking, getBookingDetail, getBookings, submitBookingFeedback } from '../../api/booking';
 
 interface MyBookingsScreenProps {
   onBack: () => void;
@@ -51,16 +51,101 @@ function formatWhen(scheduledStart: string, scheduledEnd: string) {
   return `${dayLabel} - ${formatTime12h(start)} - ${formatTime12h(end)}`;
 }
 
+// Feedback closes the loop on a completed support (client brief TEST 7). It only
+// appears once the booking is completed, and once submitted it becomes read-only
+// so the participant sees their own rating rather than an editable form.
+function SessionFeedback({ booking, onSubmitted }: { booking: BookingDetailRecord; onSubmitted: () => void }) {
+  const existing = booking.feedback?.submittedAt ? booking.feedback : null;
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  if (existing) {
+    return (
+      <View style={{ marginTop: 12 }} className="rounded-md border border-teal-light bg-cream p-3">
+        <Text className="font-body-medium text-caption text-text-dark">Your feedback</Text>
+        <View style={{ marginTop: 6 }} className="flex-row gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Ionicons
+              key={star}
+              name={star <= (existing.rating ?? 0) ? 'star' : 'star-outline'}
+              color="#E4572E"
+              size={18}
+            />
+          ))}
+        </View>
+        {existing.comment ? (
+          <Text style={{ marginTop: 6 }} className="font-body text-caption text-text-mid">{existing.comment}</Text>
+        ) : null}
+      </View>
+    );
+  }
+
+  async function submit() {
+    if (rating < 1) return;
+    setSaving(true);
+    try {
+      await submitBookingFeedback(booking.id, rating, comment);
+      onSubmitted();
+    } catch (err) {
+      Alert.alert('Could not send feedback', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <View style={{ marginTop: 12 }} className="rounded-md border border-border bg-cream p-3">
+      <Text className="font-body-medium text-caption text-text-dark">How was this support?</Text>
+      <View style={{ marginTop: 8 }} className="flex-row gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Pressable
+            key={star}
+            accessibilityRole="button"
+            accessibilityLabel={`Rate ${star} out of 5`}
+            onPress={() => setRating(star)}
+          >
+            <Ionicons name={star <= rating ? 'star' : 'star-outline'} color="#E4572E" size={26} />
+          </Pressable>
+        ))}
+      </View>
+      <TextInput
+        value={comment}
+        onChangeText={setComment}
+        placeholder="Anything you want to add (optional)"
+        placeholderTextColor="#8A94A6"
+        multiline
+        style={{ marginTop: 10, minHeight: 60, textAlignVertical: 'top' }}
+        className="rounded-md border border-border bg-white p-2 font-body text-caption text-text-dark"
+      />
+      <Pressable
+        accessibilityRole="button"
+        disabled={rating < 1 || saving}
+        onPress={submit}
+        style={{ marginTop: 10 }}
+        className={`h-10 items-center justify-center rounded-md bg-teal-dark ${rating < 1 || saving ? 'opacity-50' : ''}`}
+      >
+        {saving ? <ActivityIndicator color="#F7F3EE" /> : <Text className="font-body-bold text-caption text-cream">Send feedback</Text>}
+      </Pressable>
+      <Text style={{ marginTop: 8 }} className="font-body text-label text-text-light">
+        Feedback is shared with your provider to improve support. It is not an NDIS complaint channel.
+      </Text>
+    </View>
+  );
+}
+
 function BookingCard({
   booking,
   onCancel,
   onTrack,
   cancelling,
+  onFeedbackSubmitted,
 }: {
   booking: BookingDetailRecord;
   onCancel: () => void;
   onTrack?: () => void;
   cancelling: boolean;
+  onFeedbackSubmitted: () => void;
 }) {
   const providerName = booking.provider?.displayName ?? 'Provider';
   const badge = STATUS_BADGE[booking.status];
@@ -102,6 +187,8 @@ function BookingCard({
           </Pressable>
         ) : null}
       </View>
+
+      {booking.status === 'completed' ? <SessionFeedback booking={booking} onSubmitted={onFeedbackSubmitted} /> : null}
     </Card>
   );
 }
@@ -229,6 +316,7 @@ export function MyBookingsScreen({ onBack, onTrackProvider }: MyBookingsScreenPr
                   cancelling={cancellingId === booking.id}
                   onCancel={() => confirmCancel(booking)}
                   onTrack={onTrackProvider ? () => onTrackProvider(booking) : undefined}
+                  onFeedbackSubmitted={() => loadBookings(tab, { silent: true })}
                 />
               ))
             )}

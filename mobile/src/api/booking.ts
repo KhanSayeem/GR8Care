@@ -63,6 +63,7 @@ export interface BookingRecord {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  feedback?: BookingFeedback | null;
 }
 
 export interface CreateBookingResponse {
@@ -152,4 +153,23 @@ export async function updateBooking(id: string, input: UpdateBookingInput) {
     method: 'PATCH',
     body: JSON.stringify(input),
   }) as Promise<UpdateBookingResponse>;
+}
+
+export interface BookingFeedback {
+  rating: number | null;
+  comment: string;
+  submittedAt: string | null;
+}
+
+export interface SubmitFeedbackResponse {
+  mode: 'bookingFeedback';
+  boundary: string;
+  booking: BookingRecord;
+}
+
+export async function submitBookingFeedback(id: string, rating: number, comment?: string) {
+  return apiFetch(`/bookings/${encodeURIComponent(id)}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify({ rating, comment: comment ?? '' }),
+  }) as Promise<SubmitFeedbackResponse>;
 }

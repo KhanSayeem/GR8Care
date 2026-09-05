@@ -13,6 +13,7 @@ const LANGUAGE_OPTIONS: LanguageOption[] = [
   { code: 'vi', label: 'Vietnamese' },
   { code: 'zh', label: 'Mandarin' },
   { code: 'ar', label: 'Arabic' },
+  { code: 'pa', label: 'Punjabi' },
 ];
 
 interface LanguageSelectionScreenProps {

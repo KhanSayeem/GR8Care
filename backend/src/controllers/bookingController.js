@@ -1,4 +1,5 @@
-const { cancelBooking, createBooking, getBookingDetail, listBookings, updateBooking } = require('../services/bookingService');
+const {
+  submitBookingFeedback, cancelBooking, createBooking, getBookingDetail, listBookings, updateBooking } = require('../services/bookingService');
 
 async function createBookingRequest(req, res) {
   try {
@@ -84,7 +85,21 @@ async function updateBookingRequest(req, res) {
   }
 }
 
+async function submitBookingFeedbackRequest(req, res) {
+  try {
+    const result = await submitBookingFeedback(req.user, req.params.id, req.body);
+    res.status(201).json(result);
+  } catch (err) {
+    if ([400, 403, 404, 409].includes(err.status)) {
+      return res.status(err.status).json({ error: err.message, details: err.details });
+    }
+
+    throw err;
+  }
+}
+
 module.exports = {
+  submitBookingFeedbackRequest,
   cancelBookingRequest,
   createBookingRequest,
   getBookingRequest,

@@ -16,6 +16,7 @@ const LANGUAGE_OPTIONS = [
   { code: 'vi', label: 'Vietnamese' },
   { code: 'zh', label: 'Mandarin' },
   { code: 'ar', label: 'Arabic' },
+  { code: 'pa', label: 'Punjabi' },
 ];
 
 export function LanguagePreferenceScreen({ token, user, onBack, onSaved }: LanguagePreferenceScreenProps) {
