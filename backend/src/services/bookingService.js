@@ -114,6 +114,13 @@ function serializeBooking(booking) {
     cancelledById: booking.cancelledBy ? String(booking.cancelledBy) : null,
     completedAt: booking.completedAt,
     completedById: booking.completedBy ? String(booking.completedBy) : null,
+    feedback: booking.feedback
+      ? {
+          rating: booking.feedback.rating ?? null,
+          comment: booking.feedback.comment || '',
+          submittedAt: booking.feedback.submittedAt ?? null,
+        }
+      : null,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
   };
@@ -480,9 +487,40 @@ async function cancelBooking(user, bookingId, payload = {}) {
   };
 }
 
+// Feedback belongs to the participant and only makes sense once the support
+// actually happened, so it is gated on a completed booking.
+async function submitBookingFeedback(user, bookingId, payload = {}) {
+  const booking = await findAccessibleBooking(user, bookingId);
+
+  assertBookingRequester(user, getRefId(booking.participant));
+
+  if (booking.status !== 'completed') {
+    throw conflict('Feedback can only be given on a completed booking');
+  }
+
+  const rating = Number(payload.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw badRequest('rating must be a whole number between 1 and 5');
+  }
+
+  booking.feedback = {
+    rating,
+    comment: normalizeText(payload.comment),
+    submittedAt: new Date(),
+  };
+  await booking.save();
+
+  return {
+    mode: 'bookingFeedback',
+    boundary: BOOKING_REQUEST_BOUNDARY,
+    booking: serializeBooking(booking),
+  };
+}
+
 module.exports = {
   BOOKING_REQUEST_BOUNDARY,
   cancelBooking,
+  submitBookingFeedback,
   createBooking,
   getBookingDetail,
   listBookings,

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const ProviderProfile = require('../models/ProviderProfile');
 const User = require('../models/User');
+const { findZoneForLocation } = require('../config/zones');
 
 const PROVIDER_MATCHING_BOUNDARY =
   'Compatibility scores are a matching guide based on stated location, language, and goal overlap. They do not verify quality of care, ABN status is provider-declared and not independently confirmed by GR8Care, and a high score does not replace your own assessment of fit.';
@@ -169,10 +170,19 @@ function sortProviderEntries(entries, { topRated, canScore }) {
   return entries.sort((a, b) => b.profile.createdAt - a.profile.createdAt);
 }
 
+// A zone is derived from the provider's stated suburb so the same core can serve
+// Fairfield and Gosnells without a separate deployment per zone.
+function matchesZone(profile, zoneId) {
+  if (!zoneId) return true;
+  const zone = findZoneForLocation(profile?.location);
+  return zone ? zone.id === zoneId : false;
+}
+
 async function listProviders(requester, filters = {}) {
   const near = normalizeText(filters.near) || null;
   const language = normalizeText(filters.language) || null;
   const goals = normalizeGoalsFilter(filters.goals);
+  const zone = normalizeText(filters.zone) || null;
   const topRated = parseBooleanFilter(filters.topRated);
   const canScore = canScoreCompatibility(requester);
 
@@ -184,6 +194,7 @@ async function listProviders(requester, filters = {}) {
 
   let entries = profiles
     .filter((profile) => profile.provider)
+    .filter((profile) => matchesZone(profile, zone))
     .filter((profile) => matchesNear(profile, near))
     .filter((profile) => matchesLanguage(profile, language))
     .filter((profile) => matchesGoals(profile, goals))

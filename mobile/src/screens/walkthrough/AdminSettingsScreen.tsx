@@ -12,6 +12,7 @@ const LANGUAGE_LABELS: Record<string, string> = {
   vi: 'Vietnamese',
   zh: 'Mandarin',
   ar: 'Arabic',
+  pa: 'Punjabi',
 };
 
 export function AdminSettingsScreen() {

@@ -166,6 +166,17 @@ export function EducationLibraryScreen({ onOpenAiBot }: EducationLibraryScreenPr
         <Text className="mt-3 font-body text-body text-text-mid">{selectedArticle.detail}</Text>
         <Text className="mt-3 font-body-medium text-caption text-text-dark">Language path</Text>
         <Text className="mt-1 font-body text-caption text-text-mid">{selectedArticle.language}</Text>
+        {/* NDIS guidance changes, so every article shows where it came from and when
+            it was last checked against that source. */}
+        <View style={{ marginTop: 12 }} className="rounded-md border border-teal-light bg-white p-3">
+          <Text className="font-body-medium text-caption text-text-dark">Source</Text>
+          <Text className="mt-1 font-body text-caption text-text-mid">{selectedArticle.source}</Text>
+          <Text className="mt-1 font-body text-caption text-text-mid">{selectedArticle.sourceUrl}</Text>
+          <View style={{ marginTop: 8 }} className="flex-row flex-wrap gap-2">
+            <Badge label={`Version ${selectedArticle.version}`} tone="neutral" />
+            <Badge label={`Last verified ${selectedArticle.lastVerified}`} tone="neutral" />
+          </View>
+        </View>
         <View className="mt-3 rounded-md border border-teal-light bg-cream p-3">
           <Text className="font-body text-caption text-text-mid">
             Education only. This is not legal advice, clinical translation, funding approval, individual NDIA decision interpretation, or an official NDIA communication channel.

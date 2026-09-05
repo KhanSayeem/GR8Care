@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  submitBookingFeedbackRequest,
   cancelBookingRequest,
   createBookingRequest,
   getBookingRequest,
@@ -14,6 +15,7 @@ router.get('/', requireAuth, listBookingRequests);
 router.post('/', requireAuth, createBookingRequest);
 router.get('/:id', requireAuth, getBookingRequest);
 router.patch('/:id', requireAuth, updateBookingRequest);
+router.post('/:id/feedback', requireAuth, submitBookingFeedbackRequest);
 router.delete('/:id', requireAuth, cancelBookingRequest);
 
 module.exports = router;
