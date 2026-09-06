@@ -3,9 +3,10 @@ import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import { BookingDetailRecord, getBookingDetail, getBookings } from '../../api/booking';
 import { ProviderScheduleBlock, ProviderStats, getProviderScheduleToday, getProviderStats } from '../../api/providerDashboard';
+import { FundingCategorySummary, getFundingSummary } from '../../api/funding';
 import { getNotifications } from '../../api/notifications';
 import { Badge, Card, ProgressBar } from '../../components';
-import { fundingCategories, shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
+import { shiftTasks, templateExamples, workforceResources } from '../../data/walkthroughData';
 import { useAuthStore } from '../../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -25,6 +26,13 @@ interface HomeScreenProps {
   onOpenDemandSignal?: () => void;
   onOpenFindProviders?: () => void;
 }
+
+// Colours match the Funding Tracker screen so the two views read as one thing.
+const FUNDING_TONES: Record<FundingCategorySummary['category'], 'teal-dark' | 'provider-green' | 'coral'> = {
+  core: 'teal-dark',
+  capacity: 'provider-green',
+  capital: 'coral',
+};
 
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
 
@@ -169,6 +177,11 @@ export function HomeScreen({
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // The dashboard used to show fixed numbers from walkthroughData while the
+  // Funding tab showed the real plan, so the same participant saw two different
+  // sets of figures one tap apart. Both now read the same API.
+  const [dashboardFunding, setDashboardFunding] = useState<FundingCategorySummary[]>([]);
+
   const user = useAuthStore((state) => state.user);
 
   const isProviderShell = roleLabel === 'Provider' || roleLabel === 'Support Worker';
@@ -265,6 +278,24 @@ export function HomeScreen({
   useEffect(() => {
     return loadUpcomingBooking();
   }, [loadUpcomingBooking]);
+
+  useEffect(() => {
+    if (isProviderShell) return undefined;
+
+    let cancelled = false;
+    getFundingSummary()
+      .then((res) => {
+        if (!cancelled) setDashboardFunding(res.summary.categories);
+      })
+      .catch(() => {
+        // A participant with no active plan simply gets no funding card.
+        if (!cancelled) setDashboardFunding([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isProviderShell]);
 
   const providerMetricCards = providerStats
     ? [
@@ -502,20 +533,20 @@ export function HomeScreen({
               <Card style={styles.fundingCard}>
                 <Text style={styles.sectionLabel}>NDIS Funding Overview</Text>
                 <View style={styles.fundingStack}>
-                  {fundingCategories.map((category) => {
-                    const remaining = category.allocation - category.used;
-                    const progress = category.used / category.allocation;
+                  {dashboardFunding.map((category) => {
+                    const remaining = category.remaining;
+                    const progress = category.allocation > 0 ? category.spentToDate / category.allocation : 0;
                     const valueColor = remaining < 0 ? '#E53E3E' : '#A0AEC0';
 
                     return (
-                      <View key={category.label}>
+                      <View key={category.category}>
                         <View style={styles.progressHeader}>
                           <Text style={styles.progressLabel}>{category.label}</Text>
                           <Text style={[styles.progressValue, { color: valueColor }]}>
                             {remaining < 0 ? `Over ${formatCurrency(Math.abs(remaining))}` : `${formatCurrency(remaining)} left`}
                           </Text>
                         </View>
-                        <ProgressBar progress={progress} tone={category.tone} />
+                        <ProgressBar progress={progress} tone={FUNDING_TONES[category.category]} />
                       </View>
                     );
                   })}
