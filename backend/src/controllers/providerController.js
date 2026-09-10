@@ -45,8 +45,15 @@ async function getProviderAvailabilityById(req, res) {
 }
 
 async function getMyStats(req, res) {
-  const result = await getProviderStats(req.user);
-  res.json(result);
+  try {
+    const result = await getProviderStats(req.user, { date: req.query.date });
+    res.json(result);
+  } catch (err) {
+    if (err.status === 400) {
+      return res.status(400).json({ error: err.message });
+    }
+    throw err;
+  }
 }
 
 async function getMyScheduleToday(req, res) {

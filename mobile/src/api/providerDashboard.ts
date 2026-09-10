@@ -20,12 +20,17 @@ export interface ProviderStatsResponse {
   stats: ProviderStats;
 }
 
+// One shape for both an open availability block and a real booked session, so
+// the schedule lists can render them together.
 export interface ProviderScheduleBlock {
   id: string;
   start: string;
   end: string;
   service: string;
-  status: 'available';
+  status: 'available' | 'booked';
+  bookingId?: string;
+  bookingStatus?: string;
+  participantName?: string;
 }
 
 export interface ProviderScheduleTodayResponse {
@@ -33,6 +38,8 @@ export interface ProviderScheduleTodayResponse {
   boundary: string;
   date: string;
   day: string;
+  bookedCount: number;
+  availableCount: number;
   schedule: ProviderScheduleBlock[];
 }
 

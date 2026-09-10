@@ -38,11 +38,14 @@ export function ProviderTabs() {
         headerShown: false,
         tabBarActiveTintColor: '#0B4F6C',
         tabBarInactiveTintColor: '#4A5568',
-        tabBarStyle: { borderTopColor: '#E8E0D6' },
-        tabBarIconStyle: { marginTop: 4 },
+        // Labels off: five of them do not fit across a phone width without
+        // overlapping. Each tab keeps an accessibility label instead.
+        tabBarShowLabel: false,
+        tabBarStyle: { borderTopColor: '#E8E0D6', height: 60, paddingTop: 6, paddingBottom: 6 },
+        tabBarIconStyle: { marginTop: 0 },
       }}
     >
-      <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}>
+      <Tab.Screen name="Dashboard" options={{ tabBarLabel: 'Home', tabBarAccessibilityLabel: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }}>
         {({ navigation }) => (
           <HomeScreen
             roleLabel={roleLabel}
@@ -122,14 +125,14 @@ export function ProviderTabs() {
       >
         {({ navigation }) => <AiEducatorBotScreen onBack={() => navigation.navigate('Dashboard')} />}
       </Tab.Screen>
-      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }}>
+      <Tab.Screen name="Resources" options={{ tabBarLabel: 'Resources', tabBarAccessibilityLabel: 'Resources', tabBarIcon: tabIcon('book', 'book-outline') }}>
         {({ navigation }) => <EducationLibraryScreen onOpenAiBot={() => navigation.navigate('AiBot')} />}
       </Tab.Screen>
-      <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
-      <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
+      <Tab.Screen name="Templates" options={{ tabBarLabel: 'Templates', tabBarAccessibilityLabel: 'Templates', tabBarIcon: tabIcon('document-text', 'document-text-outline') }} component={DocumentTemplatesScreen} />
+      <Tab.Screen name="Workforce" options={{ tabBarLabel: 'Workforce', tabBarAccessibilityLabel: 'Workforce', tabBarIcon: tabIcon('briefcase', 'briefcase-outline') }} component={WellnessScreen} />
       <Tab.Screen
         name="Settings"
-        options={{ tabBarLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }}
+        options={{ tabBarLabel: 'Account', tabBarAccessibilityLabel: 'Account', tabBarIcon: tabIcon('person', 'person-outline') }}
         component={ProviderProfileSettingsScreen}
       />
     </Tab.Navigator>

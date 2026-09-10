@@ -34,6 +34,14 @@ const FUNDING_TONES: Record<FundingCategorySummary['category'], 'teal-dark' | 'p
   capital: 'coral',
 };
 
+// Booking statuses shown on the provider's own day view.
+const SESSION_BADGE: Record<string, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  inProgress: 'In progress',
+  completed: 'Completed',
+};
+
 type ProviderSection = 'dashboard' | 'resources' | 'templates' | 'workforce';
 
 interface QuickAction {
@@ -168,6 +176,7 @@ export function HomeScreen({
   const [providerSchedule, setProviderSchedule] = useState<ProviderScheduleBlock[]>([]);
   const [providerDashboardBoundary, setProviderDashboardBoundary] = useState('');
   const [providerScheduleDay, setProviderScheduleDay] = useState('');
+  const [providerBookedToday, setProviderBookedToday] = useState(0);
   const [providerLoading, setProviderLoading] = useState(false);
   const [providerRefreshing, setProviderRefreshing] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
@@ -218,6 +227,7 @@ export function HomeScreen({
       setProviderSchedule(scheduleResult.schedule);
       setProviderDashboardBoundary(statsResult.boundary || scheduleResult.boundary);
       setProviderScheduleDay(scheduleResult.day);
+      setProviderBookedToday(scheduleResult.bookedCount ?? 0);
     } catch (err) {
       setProviderError(err instanceof Error ? err.message : 'Provider dashboard could not be loaded.');
     } finally {
@@ -405,28 +415,42 @@ export function HomeScreen({
                     <Text style={[styles.sectionLabel, { flexShrink: 1 }]} numberOfLines={1}>
                       Today's schedule{providerScheduleDay ? ` - ${providerScheduleDay}` : ''}
                     </Text>
-                    <Text style={[styles.metricDetail, { flexShrink: 0 }]}>{providerStats.activeAvailabilityBlocks} active blocks</Text>
+                    <Text style={[styles.metricDetail, { flexShrink: 0 }]} numberOfLines={1}>
+                      {providerBookedToday > 0
+                        ? `${providerBookedToday} booked`
+                        : `${providerStats.activeAvailabilityBlocks} open blocks`}
+                    </Text>
                   </View>
                   <View style={styles.scheduleStack}>
                     {providerSchedule.length === 0 ? (
                       <View style={styles.scheduleEmpty}>
                         <Ionicons name="calendar" color="#0B4F6C" size={18} />
-                        <Text style={styles.providerStateText}>No enabled availability blocks for today.</Text>
+                        <Text style={styles.providerStateText}>Nothing booked and no open blocks for today.</Text>
                       </View>
                     ) : (
-                      providerSchedule.map((block) => (
-                        <View key={block.id} style={styles.scheduleRow}>
-                          <View style={styles.scheduleTimePill}>
-                            <Text style={styles.scheduleTimeText}>{block.start}</Text>
-                            <Text style={styles.scheduleTimeText}>{block.end}</Text>
+                      providerSchedule.map((block) => {
+                        const booked = block.status === 'booked';
+                        return (
+                          <View key={block.id} style={styles.scheduleRow}>
+                            <View style={styles.scheduleTimePill}>
+                              <Text style={styles.scheduleTimeText}>{block.start}</Text>
+                              <Text style={styles.scheduleTimeText}>{block.end}</Text>
+                            </View>
+                            <View style={styles.bookingCopy}>
+                              <Text style={styles.taskText} numberOfLines={1}>
+                                {booked ? block.participantName : block.service}
+                              </Text>
+                              <Text style={styles.bookingService} numberOfLines={1}>
+                                {booked ? block.service : 'Available for matching'}
+                              </Text>
+                            </View>
+                            <Badge
+                              label={booked ? SESSION_BADGE[block.bookingStatus ?? ''] ?? 'Booked' : 'Open'}
+                              tone={booked ? 'info' : 'success'}
+                            />
                           </View>
-                          <View style={styles.bookingCopy}>
-                            <Text style={styles.taskText}>{block.service}</Text>
-                            <Text style={styles.bookingService}>Available for matching</Text>
-                          </View>
-                          <Badge label="Open" tone="success" />
-                        </View>
-                      ))
+                        );
+                      })
                     )}
                   </View>
                 </>
