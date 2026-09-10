@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AiEducatorBotScreen } from '../screens/walkthrough/AiEducatorBotScreen';
@@ -206,6 +206,7 @@ export function ParticipantTabs() {
               <Pressable
                 key={tab.key}
                 accessibilityRole="button"
+                accessibilityLabel={tab.label}
                 accessibilityState={{ selected: focused }}
                 onPress={() => setActiveTab(tab.key)}
                 style={styles.tabButton}
@@ -213,9 +214,8 @@ export function ParticipantTabs() {
                 <Ionicons
                   name={focused ? tab.activeIcon : tab.inactiveIcon}
                   color={focused ? '#0B4F6C' : '#4A5568'}
-                  size={24}
+                  size={26}
                 />
-                <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{tab.label}</Text>
               </Pressable>
             );
           })}
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabBar: {
-    minHeight: 72,
+    minHeight: 60,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#E8E0D6',
     backgroundColor: '#FFFFFF',
@@ -250,13 +250,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 3,
   },
-  tabLabel: {
-    color: '#4A5568',
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '600',
-  },
-  tabLabelActive: {
-    color: '#0B4F6C',
-  },
+
 });
